@@ -17,12 +17,12 @@ import com.hoho.android.usbserial.driver.UsbSerialPort;
  * create notification and queue serial data while activity is not in the foreground
  */
 public class LGWService extends Service
-        implements PayloadListener {
+{
 
     private static final String TAG = "lgw-service";;
     private UsbSerialPort usbSerialPort;
 
-    class SerialBinder extends Binder {
+    class LGWServiceBinder extends Binder {
         LGWService getService() {
             return LGWService.this;
         }
@@ -31,7 +31,7 @@ public class LGWService extends Service
     private final Handler mainLooper;
     private final IBinder binder;
 
-    private boolean connected;
+    public boolean connected;
 
     private PayloadListener listener;
 
@@ -41,7 +41,7 @@ public class LGWService extends Service
     public LGWService() {
         log("serial service created");
         mainLooper = new Handler(Looper.getMainLooper());
-        binder = new SerialBinder();
+        binder = new LGWServiceBinder();
     }
 
     @Override
@@ -55,7 +55,7 @@ public class LGWService extends Service
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        log("serial service bind");
+        log("lgw service bind");
         return binder;
     }
 
@@ -63,24 +63,25 @@ public class LGWService extends Service
      * Api
      */
     public void connect() {
-        log("service connect serial port");
+        log("lgw service connect USB serial port");
         usbSerialPort = FTDI.open(this);
-        connected = true;
+        connected = usbSerialPort != null;
+        informConnected(connected);
     }
 
     public void disconnect() {
-        log("service disconnect serial socket");
+        log("lgw service disconnect USB serial socket");
         connected = false; // ignore data,errors while disconnecting
         cancelNotification();
         if(usbSerialPort != null) {
             FTDI.close(usbSerialPort);
             usbSerialPort = null;
         }
+        informDisconnected();
     }
 
-
     public void attach(PayloadListener listener) {
-        log("attach serial listener");
+        log("lgw attach Lora payload listener");
         if (Looper.getMainLooper().getThread() != Thread.currentThread())
             throw new IllegalArgumentException("not in main thread");
         cancelNotification();
@@ -91,7 +92,7 @@ public class LGWService extends Service
     }
 
     public void detach() {
-        log("detach service, connected: " + Boolean.toString(connected));
+        log("lgw detach payload listener, connected: " + Boolean.toString(connected));
         listener = null;
     }
 
@@ -117,8 +118,7 @@ public class LGWService extends Service
         // stopForeground(true);
     }
 
-    @Override
-    public void onValue(final Payload value) {
+    public void informValue(final Payload value) {
         synchronized (this) {
             if (listener != null) {
                 mainLooper.post(new Runnable() {
@@ -133,21 +133,36 @@ public class LGWService extends Service
         }
     }
 
-    @Override
-    public void onInfo(String msg) {
+    public void informConnected(boolean on) {
         synchronized (this) {
             if (listener != null) {
                 mainLooper.post(new Runnable() {
                     @Override
                     public void run() {
                         if (listener != null) {
-                            listener.onInfo(msg);
+                            listener.onConnected(on);
                         }
                     }
                 });
             }
         }
     }
+
+    public void informDisconnected() {
+        synchronized (this) {
+            if (listener != null) {
+                mainLooper.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (listener != null) {
+                            listener.onDisconnected();
+                        }
+                    }
+                });
+            }
+        }
+    }
+
     boolean startGateway() {
         return true;
     }

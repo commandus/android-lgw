@@ -5,8 +5,8 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 public class Settings {
-    public static final int USB_VENDOR_ID = 0x16d0;
-    public static final int USB_PRODUCT_ID = 0x087e;
+    public static final int USB_VENDOR_ID = 0x0483; // 0x16d0;
+    public static final int USB_PRODUCT_ID = 0x5740; // 0x087e;
     static final String APPLICATION_ID = "com.commandus.lgw";
     static final String INTENT_ACTION_GRANT_USB = APPLICATION_ID + ".GRANT_USB";
     static final String INTENT_ACTION_DISCONNECT = APPLICATION_ID + ".Disconnect";
@@ -40,7 +40,6 @@ public class Settings {
     private long mSecret;
     private String mHost;
     private int mPort;
-    private String mProto; // grpc|json
     private String mTheme; // light|dark
     private double mEmissivityCoefficient;
     private int mCriticalMaxTemperature;
@@ -70,10 +69,6 @@ public class Settings {
         return mPort;
     }
 
-    public String getProto() {
-        return mProto;
-    }
-
     public String getTheme() {
         return mTheme;
     }
@@ -97,8 +92,7 @@ public class Settings {
         mSecret = prefs.getLong(PREF_SECRET, 0);
         mHost = prefs.getString(PREF_SERVICE_HOST, DEF_SERVICE_ADDRESS);
         mPort = prefs.getInt(PREF_SERVICE_PORT, DEF_SERVICE_PORT);
-        mProto = prefs.getString(PREF_SERVICE_PROTO, "grpc");
-        mTheme = prefs.getString(PREF_THEME, "light");
+        mTheme = prefs.getString(PREF_THEME, "dark");
     }
 
     public Settings(Context context) {

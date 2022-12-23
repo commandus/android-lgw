@@ -58,8 +58,6 @@ public class FTDI {
         if (success)
             return port;
         else {
-            UsbSerialDriver driver = null;
-
             return null;
         }
     }

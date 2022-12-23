@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="lgwPadding">5dp</dimen>
+    <dimen name="payloadlistItemHeight">22pt</dimen>
+    <dimen name="payloadlistItemHeightMargin">5dp</dimen>
 </resources>

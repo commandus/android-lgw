@@ -1,28 +1,39 @@
 package com.commandus.lgw;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.recyclerview.widget.RecyclerView;
 
-import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import com.commandus.ftdi.FTDI;
 import com.commandus.lgw.databinding.ActivityMainBinding;
 
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity
-    implements PayloadListener
+    implements ServiceConnection, PayloadListener
 {
     private static final int SOUND_PRIORITY_1 = 1;
     private static final String TAG = MainActivity.class.getSimpleName();
+    private static final String ACTION_USB_ATTACHED = "android.hardware.usb.action.USB_DEVICE_ATTACHED";
+    private static final String ACTION_USB_DETACHED = "android.hardware.usb.action.USB_DEVICE_DETACHED";
 
     private int SOUND_ALARM;
     private int SOUND_BEEP;
@@ -37,33 +48,49 @@ public class MainActivity extends AppCompatActivity
 
     private ActivityMainBinding binding;
     private SoundPool soundPool;
-
     private LGWService service;
     private boolean connected = false;
+    private Settings settings;
+    private BroadcastReceiver broadcastReceiver;
+    private PayloadAdapter payloadAdapter;
+
+    private TextView tvDevice;
+    private Switch switchGateway;
+    private TextView textStatusService;
+    private TextView textStatusUSB;
+    private TextView textStatusLGW;
+    private RecyclerView recyclerViewLog;
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
-        log("service connect..");
-        service = ((LGWService.SerialBinder) binder).getService();
+        service = ((LGWService.LGWServiceBinder) binder).getService();
         service.attach(this);
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                connectUSBNSendMeasureAmbient();
+                textStatusService.setText("USB");
             }
         });
     }
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
-        log("disconnected");
         service = null;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                textStatusService.setText("usb");
+                setUIUSBConnected(false);
+            }
+        });
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        settings = Settings.getSettings(this);
+        // do not turn off screen
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -83,19 +110,95 @@ public class MainActivity extends AppCompatActivity
         SOUND_SHOT = soundPool.load(this, R.raw.shot, SOUND_PRIORITY_1);
 
         // Example of a call to a native method
-        TextView tvDevice = binding.textDevice;
+        tvDevice = binding.textDevice;
+        switchGateway = binding.switchGateway;
+        textStatusService = binding.textStatusService;
+        textStatusUSB = binding.textStatusUSB;
+        textStatusLGW = binding.textStatusLGW;
+        recyclerViewLog = binding.recyclerViewLog;
+
         tvDevice.setText(stringFromJNI());
+        switchGateway.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (switchGateway.isChecked()) {
+                    switchGateway.setChecked(startLGW());
+                } else {
+                    stopLGW();
+                }
+            }
+        });
+        payloadAdapter = new PayloadAdapter();
+        recyclerViewLog.setAdapter(payloadAdapter);
+
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                doUSBAction(intent.getAction());
+            }
+        };
+
+        startService(new Intent(this, LGWService.class)); // prevents service destroy on unbind from recreated activity caused by orientation change
+
+        checkTheme();
+    }
+
+    private void stopLGW() {
+        if (connected && service != null) {
+            service.stopGateway();
+        }
+    }
+
+    private boolean startLGW() {
+        if (connected && service != null) {
+            return service.startGateway();
+        } else
+            return false;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        log(new Date().toString());
+        bindService(new Intent(this, LGWService.class), this, Context.BIND_AUTO_CREATE);
+        IntentFilter f = new IntentFilter();
+        f.addAction(Settings.INTENT_ACTION_GRANT_USB);
+        f.addAction(ACTION_USB_ATTACHED);
+        f.addAction(ACTION_USB_DETACHED);
+        registerReceiver(broadcastReceiver, f);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (service != null) {
+            try {
+                unbindService(this);
+            } catch (Exception ignored) {
+
+            }
+        }
+        unregisterReceiver(broadcastReceiver);
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
-        if (intent.getAction().equals("android.hardware.usb.action.USB_DEVICE_ATTACHED")) {
-            soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
-            log("new intent USB_DEVICE_ATTACHED, new device attached");
-            log("trying to connect");
-            connectUSBNSendMeasureAmbient();
-        }
+        doUSBAction(intent.getAction());
         super.onNewIntent(intent);
+    }
+
+    private void doUSBAction(String action) {
+        if (ACTION_USB_ATTACHED.equals(action)) {
+            soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
+            connectUSB();
+        }
+        if (ACTION_USB_DETACHED.equals(action)) {
+            soundPool.play(SOUND_OFF, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
+            log("USB device detached");
+            if (service != null)
+                service.stopGateway();
+            setUIUSBConnected(false);
+        }
     }
 
     /**
@@ -105,6 +208,7 @@ public class MainActivity extends AppCompatActivity
     public native String stringFromJNI();
 
     void log(String s) {
+        payloadAdapter.push(s);
         Log.d(TAG, s);
     }
 
@@ -118,36 +222,71 @@ public class MainActivity extends AppCompatActivity
 
     }
 
-    private void connectUSBNSendMeasureAmbient() {
-        connectUSBNSendMeasureAmbient(null);
+    @Override
+    public void onConnected(boolean on) {
+        if (on)
+            log("connected");
+        else
+            log("disconnected");
+        if (on)
+            textStatusUSB.setText("Connected");
+        else
+            textStatusUSB.setText("Disconnected");
     }
 
-    private void connectUSBNSendMeasureAmbient(Boolean permissionGranted) {
-        if (usbConnection == null) {
+    @Override
+    public void onDisconnected() {
+        textStatusUSB.setText("Disconnected");
+    }
+
+    private void connectUSB() {
+        connectUSB(null);
+    }
+
+    private void connectUSB(Boolean permissionGranted) {
+        log("try connect to USB");
+        if (service == null)
+            return;
+        /*
+        if (!service.connected) {
+            service.connect();
+            log("try service connect to USB");
             validateUSBConnection(permissionGranted);
-            if (usbConnection == null) {
-                tryToFindDeviceInFuture(permissionGranted, 5000);
-                return;
-            }
+            tryToFindDeviceInFuture(permissionGranted, 5000);
+            return;
         }
+        log("USB connection established");
+         */
 
-        log("USB connection established..");
-
-        if (!FTDI.hasDevice(this)) {
-            log("connect ..");
+        if (FTDI.hasDevice(this)) {
             try {
                 service.connect();
             } catch (Exception e) {
-                log("connect exception: " + e.getMessage());
+                log("connection failed: " + e.getMessage());
             }
+        } else {
+            log("Unknown USB device");
         }
 
-        // start gateway
-        service.startGateway();
+        if (!service.connected)
+            return;
 
         // usb connect is not asynchronous. connect-success and connect-error are returned immediately from socket.connect
         // for consistency to bluetooth/bluetooth-LE app use same SerialListener and SerialService classes
         soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
+    }
+
+    private void setUIUSBConnected(boolean connected) {
+        if (connected) {
+            log("usb gateway device plugged in");
+            textStatusUSB.setText("Connected");
+            switchGateway.setChecked(false);
+            switchGateway.setEnabled(false);
+        } else {
+            log("usb gateway device off");
+            textStatusUSB.setText("Disconnected");
+            switchGateway.setEnabled(true);
+        }
     }
 
     private void tryToFindDeviceInFuture(final Boolean permissionGranted, int ms) {
@@ -157,7 +296,7 @@ public class MainActivity extends AppCompatActivity
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        connectUSBNSendMeasureAmbient(permissionGranted);
+                        connectUSB(permissionGranted);
                     }
                 });
             }
@@ -170,6 +309,13 @@ public class MainActivity extends AppCompatActivity
      */
     private void validateUSBConnection(Boolean permissionGranted) {
 
+    }
+
+    private void checkTheme() {
+        if (settings.getTheme() == "dark")
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        else
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
     }
 
 }

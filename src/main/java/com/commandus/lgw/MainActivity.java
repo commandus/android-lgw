@@ -4,12 +4,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbDeviceConnection;
+import android.hardware.usb.UsbManager;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.os.Bundle;
@@ -22,6 +26,8 @@ import android.widget.TextView;
 
 import com.commandus.ftdi.FTDI;
 import com.commandus.lgw.databinding.ActivityMainBinding;
+import com.hoho.android.usbserial.driver.UsbSerialDriver;
+import com.hoho.android.usbserial.driver.UsbSerialProber;
 
 import java.util.Date;
 import java.util.Timer;
@@ -61,6 +67,7 @@ public class MainActivity extends AppCompatActivity
     private TextView textStatusLGW;
     private RecyclerView recyclerViewLog;
 
+
     @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
         service = ((LGWService.LGWServiceBinder) binder).getService();
@@ -69,6 +76,11 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void run() {
                 textStatusService.setText("USB");
+                if (!isUSBConnected()) {
+                    if (FTDI.hasDevice(MainActivity.this)) {
+                        connectUSB();
+                    }
+                }
             }
         });
     }
@@ -99,9 +111,9 @@ public class MainActivity extends AppCompatActivity
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build();
         soundPool = new SoundPool.Builder()
-                .setAudioAttributes(attributes)
-                .setMaxStreams(10)
-                .build();
+            .setAudioAttributes(attributes)
+            .setMaxStreams(10)
+            .build();
         // load sounds
         SOUND_ALARM = soundPool.load(this, R.raw.alarm, SOUND_PRIORITY_1);
         SOUND_BEEP = soundPool.load(this, R.raw.beep, SOUND_PRIORITY_1);
@@ -134,7 +146,7 @@ public class MainActivity extends AppCompatActivity
         broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                doUSBAction(intent.getAction());
+                doUSBAction(intent);
             }
         };
 
@@ -183,21 +195,28 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onNewIntent(Intent intent) {
-        doUSBAction(intent.getAction());
+        doUSBAction(intent);
         super.onNewIntent(intent);
     }
 
-    private void doUSBAction(String action) {
+    private void doUSBAction(Intent intent) {
+        String action = intent.getAction();
+        if (Settings.INTENT_ACTION_GRANT_USB.equals(action)) {
+            Boolean granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
+            log("granted: " + Boolean.toString(granted) + ", try connect..");
+            connectUSB(granted);
+        }
         if (ACTION_USB_ATTACHED.equals(action)) {
-            soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
-            connectUSB();
+            if (FTDI.hasDevice(this)) {
+                log("USB device attached");
+                soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
+                connectUSB();
+            }
         }
         if (ACTION_USB_DETACHED.equals(action)) {
             soundPool.play(SOUND_OFF, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
             log("USB device detached");
-            if (service != null)
-                service.stopGateway();
-            setUIUSBConnected(false);
+            disconnectUSB();
         }
     }
 
@@ -219,7 +238,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onInfo(String msg) {
-
+        log("  " + msg);
     }
 
     @Override
@@ -243,47 +262,42 @@ public class MainActivity extends AppCompatActivity
         connectUSB(null);
     }
 
-    private void connectUSB(Boolean permissionGranted) {
-        log("try connect to USB");
+    private void disconnectUSB() {
+        if (service != null)
+            service.stopGateway();
+        setUIUSBConnected(false);
+    }
+    private boolean isUSBConnected() {
         if (service == null)
-            return;
-        /*
-        if (!service.connected) {
-            service.connect();
-            log("try service connect to USB");
-            validateUSBConnection(permissionGranted);
-            tryToFindDeviceInFuture(permissionGranted, 5000);
+            return false;
+        return service.connected;
+    }
+
+    private void connectUSB(Boolean permissionGranted) {
+        if (service == null) {
+            setUIUSBConnected(false);
             return;
         }
-        log("USB connection established");
-         */
-
+        if (service.connected) {
+            setUIUSBConnected(true);
+            return;
+        }
         if (FTDI.hasDevice(this)) {
-            try {
-                service.connect();
-            } catch (Exception e) {
-                log("connection failed: " + e.getMessage());
-            }
+            service.connectSerialPort();
         } else {
             log("Unknown USB device");
         }
-
-        if (!service.connected)
-            return;
-
-        // usb connect is not asynchronous. connect-success and connect-error are returned immediately from socket.connect
-        // for consistency to bluetooth/bluetooth-LE app use same SerialListener and SerialService classes
-        soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
+        setUIUSBConnected(service.connected);
+        if (service.connected)
+            soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
     }
 
     private void setUIUSBConnected(boolean connected) {
         if (connected) {
-            log("usb gateway device plugged in");
             textStatusUSB.setText("Connected");
             switchGateway.setChecked(false);
             switchGateway.setEnabled(false);
         } else {
-            log("usb gateway device off");
             textStatusUSB.setText("Disconnected");
             switchGateway.setEnabled(true);
         }
@@ -301,14 +315,6 @@ public class MainActivity extends AppCompatActivity
                 });
             }
         }, ms);
-    }
-
-    /**
-     * Set usbConnection, usbDriver
-     * @param permissionGranted
-     */
-    private void validateUSBConnection(Boolean permissionGranted) {
-
     }
 
     private void checkTheme() {

@@ -1,5 +1,6 @@
 package com.commandus.lgw;
 
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
@@ -39,7 +40,6 @@ public class LGWService extends Service
      * Lifecylce
      */
     public LGWService() {
-        log("serial service created");
         mainLooper = new Handler(Looper.getMainLooper());
         binder = new LGWServiceBinder();
     }
@@ -47,30 +47,31 @@ public class LGWService extends Service
     @Override
     public void onDestroy() {
         cancelNotification();
-        disconnect();
-        log("serial service destroyed");
+        disconnectSerialPort();
         super.onDestroy();
     }
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        log("lgw service bind");
         return binder;
     }
 
     /**
      * Api
      */
-    public void connect() {
-        log("lgw service connect USB serial port");
+    public void connectSerialPort() {
+        log("lgw connect USB serial port");
         usbSerialPort = FTDI.open(this);
         connected = usbSerialPort != null;
+        if (!connected) {
+            log("lgw connect error " + FTDI.reason);
+        }
         informConnected(connected);
     }
 
-    public void disconnect() {
-        log("lgw service disconnect USB serial socket");
+    public void disconnectSerialPort() {
+        log("lgw disconnect USB serial socket");
         connected = false; // ignore data,errors while disconnecting
         cancelNotification();
         if(usbSerialPort != null) {
@@ -81,23 +82,20 @@ public class LGWService extends Service
     }
 
     public void attach(PayloadListener listener) {
-        log("lgw attach Lora payload listener");
         if (Looper.getMainLooper().getThread() != Thread.currentThread())
             throw new IllegalArgumentException("not in main thread");
         cancelNotification();
         synchronized (this) {
             this.listener = listener;
-            // parser.setDtSeconds(0);
         }
     }
 
     public void detach() {
-        log("lgw detach payload listener, connected: " + Boolean.toString(connected));
         listener = null;
     }
 
     private void log(
-            final String message
+        final String message
     ) {
         Log.d(TAG, message);
         synchronized (this) {

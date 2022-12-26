@@ -7,9 +7,9 @@ import android.preference.PreferenceManager;
 public class Settings {
     public static final int USB_VENDOR_ID = 0x0483; // 0x16d0;
     public static final int USB_PRODUCT_ID = 0x5740; // 0x087e;
-    static final String APPLICATION_ID = "com.commandus.lgw";
-    static final String INTENT_ACTION_GRANT_USB = APPLICATION_ID + ".GRANT_USB";
-    static final String INTENT_ACTION_DISCONNECT = APPLICATION_ID + ".Disconnect";
+    public static final String APPLICATION_ID = "com.commandus.lgw";
+    public static final String INTENT_ACTION_GRANT_USB = APPLICATION_ID + ".GRANT_USB";
+    public static final String INTENT_ACTION_DISCONNECT = APPLICATION_ID + ".Disconnect";
 
     private static final String LINK_PREFIX = "https://lgw.commandus.com/";
     public  static final String EMAIL_SUPPORT = "andrey.ivanov@ikfia.ysn.ru";

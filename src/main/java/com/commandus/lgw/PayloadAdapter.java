@@ -1,6 +1,5 @@
 package com.commandus.lgw;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,7 +8,6 @@ import android.widget.TextView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
-import java.util.Date;
 
 public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHolder> {
 
@@ -56,7 +54,6 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
     // Replace the contents of a view (invoked by the layout manager)
     @Override
     public void onBindViewHolder(ViewHolder viewHolder, final int position) {
-        Log.d("+++", "onBindViewHolder " + Integer.toString(position));
         // Get element from your dataset at this position and replace the
         // contents of the view with that element
         viewHolder.getTextView().setText(logData.get(position));
@@ -65,7 +62,6 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
     // Return the size of your dataset (invoked by the layout manager)
     @Override
     public int getItemCount() {
-        Log.d("+++", "getItemCount " + Integer.toString(logData.size()));
         return logData.size();
     }
 }

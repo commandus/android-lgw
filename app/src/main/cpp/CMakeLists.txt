@@ -6,8 +6,6 @@ set(LIBLORAGW_SRC_DIR libloragw)
 set(LIBTINYMT32_SRC_DIR libtinymt32)
 set(JITQUEUE_SRC_ROOT jitqueue)
 
-# set(LIBLORAGW_INC_DIRS ${LIBTINYMT32_SRC_DIR} ${LIBLORAGW_SRC_DIR} ${JITQUEUE_SRC_ROOT})
-
 set(LIBLORAGW_SRC
     ${LIBLORAGW_SRC_DIR}/loragw_spi.c
     ${LIBLORAGW_SRC_DIR}/loragw_usb.c
@@ -44,11 +42,34 @@ set(LIBLORAGW_SRC
     qsort.c
     android-helper.cpp
 
+    ulgw/usb-listener.cpp
+    ulgw/packet-listener.cpp
+    ulgw/udp-socket.cpp
+    ulgw/utillora.cpp
+    ulgw/net-id.cpp
+    ulgw/dev-addr.cpp
+    ulgw/gateway-stat.cpp
+    ulgw/identity-service.cpp
+    ulgw/utildate.cpp
+    ulgw/device-history-item.cpp
+    ulgw/gateway-list.cpp
+    ulgw/utilstring.cpp
+    ulgw/errlist.cpp
+    ulgw/lora-gateway-listener.cpp
+    ulgw/gateway-settings.cpp
+    ulgw/lora-encrypt.cpp
+    ulgw/lorawan-mac.cpp
+    ulgw/utilthread.cpp
+
+    base64/base64.cpp
+    system/crypto/aes.c
+    system/crypto/cmac.c
+    strptime.cpp
 )
 
 add_library(loragw SHARED ${LIBLORAGW_SRC})
 set_property(TARGET loragw PROPERTY C_STANDARD 99)
-target_include_directories(loragw PRIVATE . inc)
+target_include_directories(loragw PRIVATE . packet_forwarder ulgw rapidjson base64)
 target_compile_options(loragw PRIVATE -include subst.h)
 
 find_library(log-lib log)

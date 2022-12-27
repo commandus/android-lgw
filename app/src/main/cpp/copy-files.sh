@@ -9,41 +9,42 @@ LIBTINYMT32_SRC_DIR=$RAK_2287/libtools/src
 LIBTINYMT32_INC_DIR=$RAK_2287/libtools/inc
 JITQUEUE_SRC_DIR=$RAK_2287/packet_forwarder/src
 JITQUEUE_INC_DIR=$RAK_2287/packet_forwarder/inc
-mkdir -p $DST/inc
+INC_DIR=$DST/packet_forwarder
+mkdir -p $INC_DIR
 
-cp $LIBLORAGW_INC_DIR/config.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_aux.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_debug.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_i2c.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_reg.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_sx1250.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_sx1302.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_usb.h $DST/inc
-cp $LIBLORAGW_INC_DIR/sx1250_spi.h $DST/inc
-cp $LIBLORAGW_INC_DIR/sx125x_spi.h $DST/inc
-cp $LIBLORAGW_INC_DIR/sx1261_spi.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_ad5338r.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_cal.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_gps.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_lbt.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_spi.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_sx125x.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_sx1302_rx.h $DST/inc
-cp $LIBLORAGW_INC_DIR/sx1250_com.h $DST/inc
-cp $LIBLORAGW_INC_DIR/sx1250_usb.h $DST/inc
-cp $LIBLORAGW_INC_DIR/sx1261_com.h $DST/inc
-cp $LIBLORAGW_INC_DIR/sx1261_usb.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_agc_params.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_com.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_hal.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_mcu.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_stts751.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_sx1261.h $DST/inc
-cp $LIBLORAGW_INC_DIR/loragw_sx1302_timestamp.h $DST/inc
-cp $LIBLORAGW_INC_DIR/sx1250_defs.h $DST/inc
-cp $LIBLORAGW_INC_DIR/sx125x_com.h $DST/inc
-cp $LIBLORAGW_INC_DIR/sx1261_defs.h $DST/inc
-cp $LIBLORAGW_INC_DIR/sx1261_defs.h $DST/inc
+cp $LIBLORAGW_INC_DIR/config.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_aux.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_debug.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_i2c.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_reg.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_sx1250.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_sx1302.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_usb.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/sx1250_spi.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/sx125x_spi.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/sx1261_spi.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_ad5338r.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_cal.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_gps.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_lbt.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_spi.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_sx125x.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_sx1302_rx.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/sx1250_com.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/sx1250_usb.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/sx1261_com.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/sx1261_usb.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_agc_params.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_com.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_hal.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_mcu.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_stts751.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_sx1261.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/loragw_sx1302_timestamp.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/sx1250_defs.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/sx125x_com.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/sx1261_defs.h $INC_DIR
+cp $LIBLORAGW_INC_DIR/sx1261_defs.h $INC_DIR
 
 cp $LIBLORAGW_SRC_DIR/sx1261_pram.var $DST/libloragw
 cp $LIBLORAGW_SRC_DIR/arb_fw.var $DST/libloragw
@@ -51,9 +52,9 @@ cp $LIBLORAGW_SRC_DIR/agc_fw_sx1250.var $DST/libloragw
 cp $LIBLORAGW_SRC_DIR/agc_fw_sx1257.var $DST/libloragw
 
 cp $LIBLORAGW_SRC_DIR/cal_fw.var $DST/libloragw
-cp $LIBTINYMT32_INC_DIR/tinymt32.h $DST/inc
-cp $JITQUEUE_INC_DIR/trace.h $DST/inc
-cp $JITQUEUE_INC_DIR/jitqueue.h $DST/inc
+cp $LIBTINYMT32_INC_DIR/tinymt32.h $INC_DIR
+cp $JITQUEUE_INC_DIR/trace.h $INC_DIR
+cp $JITQUEUE_INC_DIR/jitqueue.h $INC_DIR
 
 
 cp $LIBLORAGW_SRC_DIR/loragw_spi.c $DST/libloragw
@@ -112,5 +113,6 @@ do
     done
 done
 
+patch $INC_DIR/loragw_hal.h -i loragw_hal.h.patch
 exit 0
 

@@ -25,3 +25,10 @@ extern "C" int open_c(
 {
     return 0;
 }
+
+extern "C" void printf_c(
+    const char *fmt, ...
+)
+{
+
+}

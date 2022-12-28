@@ -29,7 +29,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity
-    implements ServiceConnection, PayloadListener
+    implements ServiceConnection, PayloadListener, LogIntf
 {
     private static final int SOUND_PRIORITY_1 = 1;
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -41,11 +41,6 @@ public class MainActivity extends AppCompatActivity
     private int SOUND_OFF;
     private int SOUND_ON;
     private int SOUND_SHOT;
-
-    // Used to load the 'lgw' library on application startup.
-    static {
-        System.loadLibrary("loragw");
-    }
 
     private ActivityMainBinding binding;
     private SoundPool soundPool;
@@ -62,7 +57,6 @@ public class MainActivity extends AppCompatActivity
     private TextView textStatusLGW;
     private RecyclerView recyclerViewLog;
 
-
     @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
         service = ((LGWService.LGWServiceBinder) binder).getService();
@@ -70,6 +64,7 @@ public class MainActivity extends AppCompatActivity
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                tvDevice.setText(service.lgw.version());
                 textStatusService.setText("USB");
                 if (!isUSBConnected()) {
                     if (FTDI.hasDevice(MainActivity.this)) {
@@ -124,7 +119,6 @@ public class MainActivity extends AppCompatActivity
         textStatusLGW = binding.textStatusLGW;
         recyclerViewLog = binding.recyclerViewLog;
 
-        tvDevice.setText(stringFromJNI());
         switchGateway.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -151,14 +145,14 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void stopLGW() {
-        if (connected && service != null) {
+        if (service != null) {
             service.stopGateway();
         }
     }
 
     private boolean startLGW() {
-        if (connected && service != null) {
-            return service.startGateway();
+        if (service != null) {
+            return service.startGateway(connected, 0);
         } else
             return false;
     }
@@ -215,13 +209,8 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    /**
-     * A native method that is implemented by the 'lgw' native library,
-     * which is packaged with this application.
-     */
-    public native String stringFromJNI();
-
-    void log(String s) {
+    @Override
+    public void log(String s) {
         payloadAdapter.push(s);
         Log.d(TAG, s);
     }

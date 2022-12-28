@@ -1,6 +1,5 @@
 package com.commandus.lgw;
 
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
@@ -17,7 +16,7 @@ import com.hoho.android.usbserial.driver.UsbSerialPort;
 /**
  * create notification and queue serial data while activity is not in the foreground
  */
-public class LGWService extends Service
+public class LGWService extends Service implements LogIntf
 {
 
     private static final String TAG = "lgw-service";;
@@ -31,10 +30,10 @@ public class LGWService extends Service
 
     private final Handler mainLooper;
     private final IBinder binder;
-
-    public boolean connected;
-
     private PayloadListener listener;
+
+    public LGW lgw;
+    public boolean connected;
 
     /**
      * Lifecylce
@@ -42,6 +41,7 @@ public class LGWService extends Service
     public LGWService() {
         mainLooper = new Handler(Looper.getMainLooper());
         binder = new LGWServiceBinder();
+        lgw = new LGW();
     }
 
     @Override
@@ -94,8 +94,9 @@ public class LGWService extends Service
         listener = null;
     }
 
-    private void log(
-        final String message
+    @Override
+    public void log(
+        String message
     ) {
         Log.d(TAG, message);
         synchronized (this) {
@@ -161,11 +162,19 @@ public class LGWService extends Service
         }
     }
 
-    boolean startGateway() {
+    boolean startGateway(boolean connected, int fd) {
+        if (lgw == null)
+            return false;
+        lgw.setLog(this);
+        lgw.start(connected, fd);
         return true;
     }
 
     boolean stopGateway() {
+        if (lgw == null)
+            return false;
+        lgw.stop();
+        lgw.setLog(null);
         return true;
     }
 

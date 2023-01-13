@@ -6,7 +6,7 @@ int open_c(const char *file, int flags);
 
 int close_c(int fd);
 
-void printf_c(const char *fmt, ...);
+void printf_c(const char *fmt);
 
 #ifdef __cplusplus
 }

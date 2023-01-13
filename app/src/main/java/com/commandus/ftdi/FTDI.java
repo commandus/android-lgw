@@ -7,7 +7,7 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 
-import com.commandus.lgw.Settings;
+import com.commandus.lgw.LgwSettings;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
@@ -24,14 +24,14 @@ public class FTDI {
         List<UsbSerialDriver> availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(manager);
         for (UsbSerialDriver v : availableDrivers) {
             UsbDevice d = v.getDevice();
-            if (d.getVendorId() == Settings.USB_VENDOR_ID && d.getProductId() == Settings.USB_PRODUCT_ID) {
+            if (d.getVendorId() == LgwSettings.USB_VENDOR_ID && d.getProductId() == LgwSettings.USB_PRODUCT_ID) {
                 return true;
             }
         }
         return false;
     }
 
-    public static UsbSerialPort open(Context context) {
+    public static SerialSocket open(Context context) {
         reason = "";
         UsbManager manager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
 
@@ -40,7 +40,7 @@ public class FTDI {
         UsbSerialDriver driver = null;
         for (UsbSerialDriver v : availableDrivers) {
             d = v.getDevice();
-            if (d.getVendorId() == Settings.USB_VENDOR_ID && d.getProductId() == Settings.USB_PRODUCT_ID) {
+            if (d.getVendorId() == LgwSettings.USB_VENDOR_ID && d.getProductId() == LgwSettings.USB_PRODUCT_ID) {
                 driver = v;
                 break;
             }
@@ -50,9 +50,9 @@ public class FTDI {
             return null;
         }
         if (!manager.hasPermission(d)) {
-            PendingIntent usbPermissionIntent = PendingIntent.getBroadcast(context, 0, new Intent(Settings.INTENT_ACTION_GRANT_USB), 0);
+            PendingIntent usbPermissionIntent = PendingIntent.getBroadcast(context, 0, new Intent(LgwSettings.INTENT_ACTION_GRANT_USB), 0);
             manager.requestPermission(d, usbPermissionIntent);
-            reason = "UDB device access no permission granted, requested";
+            reason = "UDB device access denied";
             return null;
         }
 
@@ -88,20 +88,16 @@ public class FTDI {
             return null;
         }
         if (success)
-            return port;
+            return new SerialSocket(context, connection, port);
         else {
             reason = "open port";
             return null;
         }
     }
 
-    public static void close(UsbSerialPort port) {
-        if (port != null) {
-            try {
-                port.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    public static void close(SerialSocket socket) {
+        if (socket != null) {
+            socket.disconnect();
         }
     }
 }

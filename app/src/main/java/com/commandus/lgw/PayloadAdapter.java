@@ -5,6 +5,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
         public ViewHolder(View view) {
             super(view);
             // Define click listener for the ViewHolder's View
-            textView = (TextView) view.findViewById(R.id.textViewListItemPayload);
+            textView = view.findViewById(R.id.textViewListItemPayload);
         }
 
         public TextView getTextView() {
@@ -44,6 +45,7 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
         logData = new ArrayList<String>();
     }
 
+    @NonNull
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
         View view = LayoutInflater.from(viewGroup.getContext())

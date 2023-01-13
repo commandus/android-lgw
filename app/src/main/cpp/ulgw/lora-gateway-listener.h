@@ -8,7 +8,7 @@
 #include "utillora.h"
 #include "gateway-settings.h"
 #include "packet-listener.h"
-#include "log-intf.h"
+#include "lgw-event-intf.h"
 
 #define MEASUREMENT_COUNT_SIZE 23
 
@@ -95,7 +95,7 @@ private:
         bool gracefullyStopped
     )> onStop;
 
-    LogIntf *onLog;
+    LGWEventIntf *onLog;
 
     // thread control
     bool stopRequest;               ///< set to true to stop all threads
@@ -178,7 +178,7 @@ public:
             const uint16_t results[LGW_SPECTRAL_SCAN_RESULT_SIZE]
         )> value
     );
-    void setOnLog(LogIntf *value);
+    void setOnLog(LGWEventIntf *value);
     void setOnUpstream(
         std::function<void(
             const LoraGatewayListener *listener,

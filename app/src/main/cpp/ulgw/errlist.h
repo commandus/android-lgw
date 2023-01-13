@@ -29,6 +29,7 @@
 #define LOG_LORA_PRINT                      9
 #define LOG_PLUGIN_PKT2                     10
 #define LOG_PLUGIN_MQTT                     11
+#define LOG_USB_ANDROID                     12
 
 
 // Module and thread names

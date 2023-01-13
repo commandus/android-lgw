@@ -60,6 +60,9 @@ set(LIBLORAGW_SRC
     ulgw/lora-encrypt.cpp
     ulgw/lorawan-mac.cpp
     ulgw/utilthread.cpp
+    ulgw/libloragw-helper.cpp
+
+    ulgw/AndroidIdentityService.cpp
 
     base64/base64.cpp
     system/crypto/aes.c

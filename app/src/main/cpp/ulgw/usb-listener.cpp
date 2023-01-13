@@ -118,7 +118,7 @@ int USBListener::listen(void *config)
     // copy verbosity level
     listener.setLogVerbosity(verbosity);
     // copy log
-    listener.setOnLog(onLog);
+    listener.setOnLog(eventProcessor);
     listener.setOnSpectralScan(onSpectralScan);
     listener.setOnUpstream(onUpstream);
 

@@ -1,9 +1,6 @@
 package com.commandus.lgw;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
-import androidx.recyclerview.widget.RecyclerView;
-
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -15,24 +12,26 @@ import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.Log;
-import android.view.View;
+import android.provider.Settings;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.Switch;
 import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.commandus.ftdi.FTDI;
 import com.commandus.lgw.databinding.ActivityMainBinding;
 
-import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity
-    implements ServiceConnection, PayloadListener, LogIntf
+    implements ServiceConnection, LGWListener, RegionDialog.RegionSelectListener
 {
     private static final int SOUND_PRIORITY_1 = 1;
-    private static final String TAG = MainActivity.class.getSimpleName();
     private static final String ACTION_USB_ATTACHED = "android.hardware.usb.action.USB_DEVICE_ATTACHED";
     private static final String ACTION_USB_DETACHED = "android.hardware.usb.action.USB_DEVICE_DETACHED";
 
@@ -42,58 +41,48 @@ public class MainActivity extends AppCompatActivity
     private int SOUND_ON;
     private int SOUND_SHOT;
 
-    private ActivityMainBinding binding;
     private SoundPool soundPool;
     private LGWService service;
-    private boolean connected = false;
-    private Settings settings;
+    private LgwSettings lgwSettings;
     private BroadcastReceiver broadcastReceiver;
     private PayloadAdapter payloadAdapter;
 
+    private Button buttonRegion;
     private TextView tvDevice;
     private Switch switchGateway;
     private TextView textStatusService;
     private TextView textStatusUSB;
-    private TextView textStatusLGW;
-    private RecyclerView recyclerViewLog;
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
         service = ((LGWService.LGWServiceBinder) binder).getService();
         service.attach(this);
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                tvDevice.setText(service.lgw.version());
-                textStatusService.setText("USB");
-                if (!isUSBConnected()) {
-                    if (FTDI.hasDevice(MainActivity.this)) {
-                        connectUSB();
-                    }
-                }
-            }
+        runOnUiThread(() -> {
+            updateUiRegion();
+            @SuppressLint("HardwareIds") String gwId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+            setTitle(getString(R.string.app_name) + " " + gwId);
+            tvDevice.setText(R.string.label_device_ready);
+            textStatusService.setText(R.string.label_usb_on);
         });
     }
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
         service = null;
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                textStatusService.setText("usb");
-                setUIUSBConnected(false);
-            }
+        runOnUiThread(() -> {
+            textStatusService.setText(R.string.label_usb_off);
+            tvDevice.setText(R.string.label_device_disconnect);
+            setUIUSBConnected(false);
         });
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        settings = Settings.getSettings(this);
+        lgwSettings = LgwSettings.getSettings(this);
         // do not turn off screen
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        com.commandus.lgw.databinding.ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         AudioAttributes attributes = new AudioAttributes.Builder()
@@ -102,33 +91,36 @@ public class MainActivity extends AppCompatActivity
             .build();
         soundPool = new SoundPool.Builder()
             .setAudioAttributes(attributes)
-            .setMaxStreams(10)
+            .setMaxStreams(5)
             .build();
         // load sounds
+        // TODO suppress warning E/OMXMaster: A component of name 'OMX.qcom.audio.decoder.aac' already exists, ignoring this one.
         SOUND_ALARM = soundPool.load(this, R.raw.alarm, SOUND_PRIORITY_1);
         SOUND_BEEP = soundPool.load(this, R.raw.beep, SOUND_PRIORITY_1);
         SOUND_OFF = soundPool.load(this, R.raw.off, SOUND_PRIORITY_1);
         SOUND_ON = soundPool.load(this, R.raw.on, SOUND_PRIORITY_1);
         SOUND_SHOT = soundPool.load(this, R.raw.shot, SOUND_PRIORITY_1);
 
-        // Example of a call to a native method
+        buttonRegion = binding.buttonRegion;
         tvDevice = binding.textDevice;
         switchGateway = binding.switchGateway;
         textStatusService = binding.textStatusService;
         textStatusUSB = binding.textStatusUSB;
-        textStatusLGW = binding.textStatusLGW;
-        recyclerViewLog = binding.recyclerViewLog;
+        // TextView textStatusLGW = binding.textStatusLGW;
+        RecyclerView recyclerViewLog = binding.recyclerViewLog;
 
-        switchGateway.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (switchGateway.isChecked()) {
-                    switchGateway.setChecked(startLGW());
-                } else {
-                    stopLGW();
-                }
+        switchGateway.setOnClickListener(view -> {
+            if (switchGateway.isChecked()) {
+                boolean r = startLGW();
+                switchGateway.setChecked(r);
+                switchGateway.setText(r ? R.string.gateway_on : R.string.gateway_off);
+            } else {
+                stopLGW();
             }
         });
+
+        buttonRegion.setOnClickListener(view -> selectRegion());
+
         payloadAdapter = new PayloadAdapter();
         recyclerViewLog.setAdapter(payloadAdapter);
 
@@ -144,6 +136,22 @@ public class MainActivity extends AppCompatActivity
         checkTheme();
     }
 
+    private void selectRegion() {
+        if (service == null)
+            return;
+        RegionDialog d = new RegionDialog(service.regionNames(), lgwSettings.getRegionIndex());
+        d.show(getSupportFragmentManager(), "");
+    }
+
+    private void updateUiRegion() {
+        if (service == null)
+            return;
+        int idx = lgwSettings.getRegionIndex();
+        String[] rns = service.regionNames();
+        if (idx >= 0 && idx < rns.length)
+            buttonRegion.setText(rns[idx]);
+    }
+
     private void stopLGW() {
         if (service != null) {
             service.stopGateway();
@@ -151,19 +159,30 @@ public class MainActivity extends AppCompatActivity
     }
 
     private boolean startLGW() {
-        if (service != null) {
-            return service.startGateway(connected, 0);
-        } else
+        if (service == null)
             return false;
+
+        if (!isUSBConnected()) {
+            if (FTDI.hasDevice(MainActivity.this)) {
+                connectUSB();
+            }
+        }
+        if (!isUSBConnected())
+            return false;
+
+        int fd = service.getUSBPortFileDescriptor();
+        int regionIndex = lgwSettings.getRegionIndex();
+        if (fd < 0)
+            return false;
+        return service.startGateway(fd, regionIndex);
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        log(new Date().toString());
         bindService(new Intent(this, LGWService.class), this, Context.BIND_AUTO_CREATE);
         IntentFilter f = new IntentFilter();
-        f.addAction(Settings.INTENT_ACTION_GRANT_USB);
+        f.addAction(LgwSettings.INTENT_ACTION_GRANT_USB);
         f.addAction(ACTION_USB_ATTACHED);
         f.addAction(ACTION_USB_DETACHED);
         registerReceiver(broadcastReceiver, f);
@@ -190,60 +209,70 @@ public class MainActivity extends AppCompatActivity
 
     private void doUSBAction(Intent intent) {
         String action = intent.getAction();
-        if (Settings.INTENT_ACTION_GRANT_USB.equals(action)) {
-            Boolean granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
-            log("granted: " + Boolean.toString(granted) + ", try connect..");
-            connectUSB(granted);
+        if (LgwSettings.INTENT_ACTION_GRANT_USB.equals(action)) {
+            boolean granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
+            if (granted) {
+                onInfo("USB device access permission granted, reconnecting..");
+                connectUSB();
+            } else {
+                onInfo("USB device access permission denied, quit..");
+            }
         }
         if (ACTION_USB_ATTACHED.equals(action)) {
             if (FTDI.hasDevice(this)) {
-                log("USB device attached");
+                onInfo("USB device attached");
                 soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
                 connectUSB();
             }
         }
         if (ACTION_USB_DETACHED.equals(action)) {
             soundPool.play(SOUND_OFF, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
-            log("USB device detached");
+            onInfo("USB device detached");
             disconnectUSB();
         }
     }
 
     @Override
-    public void log(String s) {
-        payloadAdapter.push(s);
-        Log.d(TAG, s);
+    public void onStarted(int fd, String gatewayId, String regionName, int regionIndex) {
+        switchGateway.setText(R.string.gateway_on);
+        payloadAdapter.push("Started " + gatewayId + " " + regionName);
+    }
+
+    @Override
+    public void onFinished(String message) {
+        switchGateway.setChecked(false);
+        switchGateway.setText(R.string.gateway_off);
+        payloadAdapter.push("Finished " + message);
+        soundPool.play(SOUND_BEEP, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
     }
 
     @Override
     public void onValue(Payload value) {
-
+        payloadAdapter.push(value.hexPayload);
     }
 
     @Override
-    public void onInfo(String msg) {
-        log("  " + msg);
+    public void onInfo(String msg)
+    {
+        payloadAdapter.push(msg);
     }
 
     @Override
     public void onConnected(boolean on) {
         if (on)
-            log("connected");
+            onInfo("connected");
         else
-            log("disconnected");
+            onInfo("disconnected");
         if (on)
-            textStatusUSB.setText("Connected");
+            textStatusUSB.setText(R.string.message_connected);
         else
-            textStatusUSB.setText("Disconnected");
+            textStatusUSB.setText(R.string.message_disconnected);
     }
 
     @Override
     public void onDisconnected() {
-        textStatusUSB.setText("Disconnected");
-    }
-
-    private void connectUSB() {
-        connectUSB(null);
+        textStatusUSB.setText(R.string.message_disconnected);
+        soundPool.play(SOUND_ALARM, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
     }
 
     private void disconnectUSB() {
@@ -257,55 +286,56 @@ public class MainActivity extends AppCompatActivity
         return service.connected;
     }
 
-    private void connectUSB(Boolean permissionGranted) {
+    private void connectUSB() {
+        onInfo("Connecting..");
         if (service == null) {
             setUIUSBConnected(false);
             return;
         }
         if (service.connected) {
+            onInfo("Already connected");
             setUIUSBConnected(true);
             return;
         }
         if (FTDI.hasDevice(this)) {
-            service.connectSerialPort();
+            if (service.connectSerialPort()) // permission not granted
+                return;
         } else {
-            log("Unknown USB device");
+            onInfo("Unknown USB device");
         }
+        onInfo("Connected: " + service.connected);
         setUIUSBConnected(service.connected);
         if (service.connected)
             soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
+        if (service.connected)
+            onInfo("Successfully connected");
     }
 
     private void setUIUSBConnected(boolean connected) {
         if (connected) {
-            textStatusUSB.setText("Connected");
+            textStatusUSB.setText(R.string.message_connected);
             switchGateway.setChecked(false);
             switchGateway.setEnabled(false);
         } else {
-            textStatusUSB.setText("Disconnected");
+            textStatusUSB.setText(R.string.message_disconnected);
             switchGateway.setEnabled(true);
         }
     }
 
-    private void tryToFindDeviceInFuture(final Boolean permissionGranted, int ms) {
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        connectUSB(permissionGranted);
-                    }
-                });
-            }
-        }, ms);
-    }
-
     private void checkTheme() {
-        if (settings.getTheme() == "dark")
+        if (lgwSettings.getTheme().equals("dark"))
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         else
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
     }
 
+    @Override
+    public void onSetRegionIndex(int selection) {
+        if (lgwSettings.getRegionIndex() != selection) {
+            soundPool.play(SOUND_SHOT, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
+            lgwSettings.setRegionIndex(selection);
+            lgwSettings.save();
+        }
+        updateUiRegion();
+    }
 }

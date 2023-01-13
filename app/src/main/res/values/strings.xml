@@ -1,3 +1,14 @@
 <resources>
-    <string name="app_name">rak2287usb</string>
+    <string name="app_name">rak2287</string>
+    <string name="region_dialog_title">Region</string>
+    <string name="select">Select</string>
+    <string name="cancel">Cancel</string>
+    <string name="message_disconnected">Disconnected</string>
+    <string name="message_connected">Connected</string>
+    <string name="label_usb_on">USB</string>
+    <string name="label_usb_off">usb</string>
+    <string name="label_device_ready"><![CDATA[>]]></string>
+    <string name="label_device_disconnect">*</string>
+    <string name="gateway_on">On</string>
+    <string name="gateway_off">Off</string>
 </resources>

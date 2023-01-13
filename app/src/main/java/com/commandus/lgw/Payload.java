@@ -1,5 +1,7 @@
 package com.commandus.lgw;
 
+import androidx.annotation.NonNull;
+
 import java.util.Date;
 
 public class Payload {
@@ -42,6 +44,7 @@ public class Payload {
         lsnr = p.lsnr;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "Payload {" +
@@ -50,8 +53,8 @@ public class Payload {
             "\", \"devName\": \"" + devName +
             "\", \"hexPayload\": \"" + hexPayload +
             "\", \"frequency\": " + frequency +
-            ", \"rssi\": \"" + Integer.toString(rssi) +
-            ", \"lsnr\": \"" + Float.toString(lsnr) +
+            ", \"rssi\": \"" + rssi +
+            ", \"lsnr\": \"" + lsnr +
         '}';
     }
 }

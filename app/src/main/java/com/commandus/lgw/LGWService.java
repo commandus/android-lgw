@@ -1,26 +1,48 @@
 package com.commandus.lgw;
 
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.util.Log;
+import android.provider.Settings;
 
 import androidx.annotation.Nullable;
 
 import com.commandus.ftdi.FTDI;
-import com.hoho.android.usbserial.driver.UsbSerialPort;
+import com.commandus.ftdi.SerialErrorListener;
+import com.commandus.ftdi.SerialSocket;
 
 /**
  * create notification and queue serial data while activity is not in the foreground
  */
-public class LGWService extends Service implements LogIntf
-{
+public class LGWService extends Service implements LGWListener, SerialErrorListener {
 
-    private static final String TAG = "lgw-service";;
-    private UsbSerialPort usbSerialPort;
+    private SerialSocket usbSerialSocket;
+
+    /**
+     * Return opened USB COM port
+     * @return >0 file descriptor, 0- no USB device found, <0- system error while open port
+     */
+    public int getUSBPortFileDescriptor() {
+        if (!connected || usbSerialSocket == null)
+            return 0;
+        return usbSerialSocket.serialPort.getPortNumber();
+    }
+
+    @Override
+    public void onDisconnect() {
+        // device disconnected
+        onInfo("loraGatewayListener disconnect USB serial socket");
+        connected = false; // ignore data,errors while disconnecting
+        cancelNotification();
+        if (usbSerialSocket != null) {
+            usbSerialSocket = null;
+        }
+        onDisconnected();
+    }
 
     class LGWServiceBinder extends Binder {
         LGWService getService() {
@@ -30,7 +52,7 @@ public class LGWService extends Service implements LogIntf
 
     private final Handler mainLooper;
     private final IBinder binder;
-    private PayloadListener listener;
+    private LGWListener listener;
 
     public LGW lgw;
     public boolean connected;
@@ -58,30 +80,32 @@ public class LGWService extends Service implements LogIntf
     }
 
     /**
-     * Api
-     */
-    public void connectSerialPort() {
-        log("lgw connect USB serial port");
-        usbSerialPort = FTDI.open(this);
-        connected = usbSerialPort != null;
-        if (!connected) {
-            log("lgw connect error " + FTDI.reason);
+     * @return true- permission denied
+     * */
+    public boolean connectSerialPort() {
+        onInfo("Connecting USB serial port..");
+        usbSerialSocket = FTDI.open(this);
+        if (usbSerialSocket == null) {
+            onInfo("Error open serial port: " + FTDI.reason);
+            return true;
         }
-        informConnected(connected);
+        connected = usbSerialSocket.connect(this);
+        onConnected(connected);
+        return false;
     }
 
     public void disconnectSerialPort() {
-        log("lgw disconnect USB serial socket");
+        onInfo("loraGatewayListener disconnect USB serial socket");
         connected = false; // ignore data,errors while disconnecting
         cancelNotification();
-        if(usbSerialPort != null) {
-            FTDI.close(usbSerialPort);
-            usbSerialPort = null;
+        if (usbSerialSocket != null) {
+            FTDI.close(usbSerialSocket);
+            usbSerialSocket = null;
         }
-        informDisconnected();
+        onDisconnected();
     }
 
-    public void attach(PayloadListener listener) {
+    public void attach(LGWListener listener) {
         if (Looper.getMainLooper().getThread() != Thread.currentThread())
             throw new IllegalArgumentException("not in main thread");
         cancelNotification();
@@ -90,92 +114,87 @@ public class LGWService extends Service implements LogIntf
         }
     }
 
-    public void detach() {
-        listener = null;
-    }
-
     @Override
-    public void log(
+    public void onInfo(
         String message
     ) {
-        Log.d(TAG, message);
         synchronized (this) {
             if (listener != null) {
-                mainLooper.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (listener != null) {
-                            listener.onInfo(message);
-                        }
+                mainLooper.post(() -> {
+                    if (listener != null) {
+                        listener.onInfo(message);
                     }
                 });
             }
+        }
+    }
+
+    @Override
+    public void onConnected(boolean on) {
+
+    }
+
+    @Override
+    public void onDisconnected() {
+
+    }
+
+    @Override
+    public void onStarted(int fd, String gatewayId, String regionName, int regionIndex) {
+        synchronized (this) {
+            mainLooper.post(() -> {
+                if (listener != null) {
+                    listener.onStarted(fd, gatewayId, regionName, regionIndex);
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onFinished(String message) {
+        synchronized (this) {
+            mainLooper.post(() -> {
+                if (listener != null) {
+                    listener.onFinished(message);
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onValue(Payload payload) {
+        synchronized (this) {
+            mainLooper.post(() -> {
+                if (listener != null) {
+                    listener.onValue(payload);
+                }
+            });
         }
     }
 
     private void cancelNotification() {
-        // stopForeground(true);
+        listener = null;
     }
 
-    public void informValue(final Payload value) {
-        synchronized (this) {
-            if (listener != null) {
-                mainLooper.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (listener != null) {
-                            listener.onValue(value);
-                        }
-                    }
-                });
-            }
-        }
-    }
-
-    public void informConnected(boolean on) {
-        synchronized (this) {
-            if (listener != null) {
-                mainLooper.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (listener != null) {
-                            listener.onConnected(on);
-                        }
-                    }
-                });
-            }
-        }
-    }
-
-    public void informDisconnected() {
-        synchronized (this) {
-            if (listener != null) {
-                mainLooper.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (listener != null) {
-                            listener.onDisconnected();
-                        }
-                    }
-                });
-            }
-        }
-    }
-
-    boolean startGateway(boolean connected, int fd) {
+    @SuppressLint("HardwareIds")
+    boolean startGateway(int fd, int regionIndex) {
         if (lgw == null)
             return false;
-        lgw.setLog(this);
-        lgw.start(connected, fd);
-        return true;
+        lgw.setPayloadListener(this);
+        return lgw.start(fd, regionIndex, Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID)) == 0;
     }
 
-    boolean stopGateway() {
+    void stopGateway() {
         if (lgw == null)
-            return false;
+            return;
         lgw.stop();
-        lgw.setLog(null);
-        return true;
+        lgw.setPayloadListener(null);
+    }
+
+    String[] regionNames() {
+        if (lgw == null)
+            return null;
+        return lgw.regionNames();
     }
 
 }

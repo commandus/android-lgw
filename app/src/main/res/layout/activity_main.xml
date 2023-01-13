@@ -30,8 +30,15 @@
                 android:id="@+id/textDevice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="LoRaWAN USB gateway" />
-
+                android:text="" />
+            <Button
+                android:id="@+id/buttonRegion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Region"
+                style="?android:attr/buttonBarButtonStyle"
+                >
+            </Button>
             <Switch
                 android:id="@+id/switchGateway"
                 android:layout_width="wrap_content"
@@ -48,11 +55,18 @@
             android:orientation="vertical"
             android:paddingLeft="@dimen/lgwPadding">
 
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/layoutStatistics"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="fill_horizontal"
+                android:paddingLeft="@dimen/lgwPadding">
             <TextView
                 android:id="@+id/textLog"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Events" />
+                android:text="" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerViewLog"

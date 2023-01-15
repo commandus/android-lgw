@@ -24,7 +24,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:paddingLeft="@dimen/lgwPadding">
+            android:paddingStart="@dimen/lgwPadding"
+            android:paddingEnd="@dimen/lgwPadding"
+            >
+
 
             <TextView
                 android:id="@+id/textDevice"
@@ -35,16 +38,28 @@
                 android:id="@+id/buttonRegion"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Region"
+                android:text="@string/label_region"
                 style="?android:attr/buttonBarButtonStyle"
                 >
             </Button>
-            <Switch
+
+            <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/switchGateway"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingLeft="@dimen/lgwPadding"
-                android:text="USB gateway" />
+                android:minHeight="48dp"
+                android:paddingStart="@dimen/lgwPadding"
+                android:paddingEnd="@dimen/lgwPadding"
+                android:text="@string/label_usb_gateway" />
+            <Button
+                android:id="@+id/buttonDevices"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/label_button_devices"
+                style="?android:attr/buttonBarButtonStyle"
+                >
+            </Button>
+
         </androidx.appcompat.widget.LinearLayoutCompat>
 
         <androidx.appcompat.widget.LinearLayoutCompat
@@ -53,14 +68,18 @@
             android:layout_height="wrap_content"
             android:gravity="fill_vertical"
             android:orientation="vertical"
-            android:paddingLeft="@dimen/lgwPadding">
+            android:paddingStart="@dimen/lgwPadding"
+            android:paddingEnd="@dimen/lgwPadding"
+            >
 
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/layoutStatistics"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="fill_horizontal"
-                android:paddingLeft="@dimen/lgwPadding">
+                android:paddingStart="@dimen/lgwPadding"
+                android:paddingEnd="@dimen/lgwPadding"
+                >
             <TextView
                 android:id="@+id/textLog"
                 android:layout_width="wrap_content"
@@ -72,7 +91,8 @@
                 android:id="@+id/recyclerViewLog"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:paddingLeft="@dimen/lgwPadding"
+                android:paddingStart="@dimen/lgwPadding"
+                android:paddingEnd="@dimen/lgwPadding"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
         </androidx.appcompat.widget.LinearLayoutCompat>
     </androidx.appcompat.widget.LinearLayoutCompat>
@@ -87,21 +107,24 @@
             android:id="@+id/textStatusService"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="@dimen/lgwPadding"
-            android:text="usb" />
+            android:paddingStart="@dimen/lgwPadding"
+            android:paddingEnd="@dimen/lgwPadding"
+            android:text="@string/label_usb_off" />
 
         <TextView
             android:id="@+id/textStatusUSB"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="@dimen/lgwPadding"
-            android:text="Disconnected" />
+            android:paddingStart="@dimen/lgwPadding"
+            android:paddingEnd="@dimen/lgwPadding"
+            android:text="@string/label_disconnected" />
 
         <TextView
             android:id="@+id/textStatusLGW"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="@dimen/lgwPadding"
-            android:text="Stopped" />
+            android:paddingStart="@dimen/lgwPadding"
+            android:paddingEnd="@dimen/lgwPadding"
+            android:text="@string/label_stopped" />
     </androidx.appcompat.widget.LinearLayoutCompat>
 </androidx.constraintlayout.widget.ConstraintLayout>

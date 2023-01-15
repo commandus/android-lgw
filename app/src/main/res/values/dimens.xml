@@ -3,4 +3,5 @@
     <dimen name="lgwPadding">5dp</dimen>
     <dimen name="payloadlistItemHeight">22pt</dimen>
     <dimen name="payloadlistItemHeightMargin">5dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
 </resources>

@@ -13,6 +13,7 @@ import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.Settings;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Switch;
@@ -24,9 +25,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.commandus.ftdi.FTDI;
 import com.commandus.lgw.databinding.ActivityMainBinding;
-
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity
     implements ServiceConnection, LGWListener, RegionDialog.RegionSelectListener
@@ -46,12 +44,14 @@ public class MainActivity extends AppCompatActivity
     private LgwSettings lgwSettings;
     private BroadcastReceiver broadcastReceiver;
     private PayloadAdapter payloadAdapter;
+    private DeviceAddresses deviceAddresses;
 
     private Button buttonRegion;
     private TextView tvDevice;
     private Switch switchGateway;
     private TextView textStatusService;
     private TextView textStatusUSB;
+    private Button buttonDevices;
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
@@ -102,12 +102,30 @@ public class MainActivity extends AppCompatActivity
         SOUND_SHOT = soundPool.load(this, R.raw.shot, SOUND_PRIORITY_1);
 
         buttonRegion = binding.buttonRegion;
+        buttonDevices = binding.buttonDevices;
         tvDevice = binding.textDevice;
         switchGateway = binding.switchGateway;
         textStatusService = binding.textStatusService;
         textStatusUSB = binding.textStatusUSB;
+
         // TextView textStatusLGW = binding.textStatusLGW;
         RecyclerView recyclerViewLog = binding.recyclerViewLog;
+
+        deviceAddresses = new DeviceAddresses();
+        int cnt = 0;
+        if (cnt > 0) {
+            buttonDevices.setText(getString(R.string.label_button_device_count) + cnt);
+        } else {
+            buttonDevices.setText(R.string.label_button_devices);
+        }
+
+        buttonDevices.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, DevicesActivity.class);
+                startActivity(intent);
+            }
+        });
 
         switchGateway.setOnClickListener(view -> {
             if (switchGateway.isChecked()) {

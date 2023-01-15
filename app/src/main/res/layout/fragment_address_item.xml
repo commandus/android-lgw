@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".AddressItemFragment">
+
+    <TextView
+        android:id="@+id/textview_address_item"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:text="@string/label_device_new_device"
+        />
+
+    <EditText
+        android:id="@+id/editTextAddress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="@string/label_device_address"
+        android:inputType="text"
+        android:minHeight="48dp"
+        app:layout_constraintTop_toBottomOf="@id/textview_address_item"
+        android:autofillHints="" />
+
+    <EditText
+        android:id="@+id/editTextEUI"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="@string/label_device_eui"
+        android:inputType="text"
+        android:minHeight="48dp"
+        app:layout_constraintTop_toBottomOf="@id/editTextAddress"
+        android:autofillHints="" />
+
+    <EditText
+        android:id="@+id/editTextNwkSKey"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:autofillHints=""
+        android:ems="10"
+        android:hint="@string/label_device_nwkskey"
+        android:inputType="text"
+        android:minHeight="48dp"
+        android:textColorHint="#757575"
+        app:layout_constraintTop_toBottomOf="@id/editTextEUI" />
+
+    <EditText
+        android:id="@+id/editTextAppSKey"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="@string/label_device_appskey"
+        android:inputType="text"
+        android:minHeight="48dp"
+        app:layout_constraintTop_toBottomOf="@id/editTextNwkSKey"
+        android:autofillHints="" />
+
+    <EditText
+        android:id="@+id/editTextName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="@string/label_device_name"
+        android:inputType="text"
+        android:minHeight="48dp"
+        app:layout_constraintTop_toBottomOf="@id/editTextAppSKey"
+        android:autofillHints="" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/address_item_panel_buttons"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+    <Button
+        android:id="@+id/button_address_delete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_device_delete"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+         />
+    <Button
+        android:id="@+id/button_address_close"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_device_save"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+         />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

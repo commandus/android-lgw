@@ -18,12 +18,30 @@
         android:theme="@style/Theme.Rak2287usb"
         tools:targetApi="31">
         <activity
+            android:name=".DevicesActivity"
+            android:exported="false"
+            android:label="@string/title_activity_devices"
+            android:theme="@style/Theme.Rak2287usb.NoActionBar">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+
+        <provider
+            android:name=".DeviceAddressProvider"
+            android:authorities="device.lora"
+            android:enabled="true"
+            android:exported="true" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
@@ -36,7 +54,8 @@
                 android:resource="@xml/device_filter" />
             -->
         </activity>
-        <service android:name=".LGWService" />
 
+        <service android:name=".LGWService" />
     </application>
+
 </manifest>

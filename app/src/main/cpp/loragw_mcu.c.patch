@@ -1,0 +1,38 @@
+--- libloragw/loragw_mcu.c	2023-01-17 11:25:52.062931254 +0900
++++ libloragw/loragw_mcu.new.c	2023-01-17 11:25:52.066931189 +0900
+@@ -212,7 +212,7 @@
+     buf_w[1] = (uint8_t)(payload_size >> 8); /* MSB */
+     buf_w[2] = (uint8_t)(payload_size >> 0); /* LSB */
+     buf_w[3] = cmd;
+-    n = write(fd, buf_w, HEADER_CMD_SIZE);
++    n = write_c(fd, buf_w, HEADER_CMD_SIZE);
+     if (n < 0) {
+         printf("ERROR: failed to write command header to com port\n");
+         return -1;
+@@ -224,7 +224,7 @@
+             printf("ERROR: invalid payload\n");
+             return -1;
+         }
+-        n = write(fd, payload, payload_size);
++        n = write_c(fd, payload, payload_size);
+         if (n < 0) {
+             printf("ERROR: failed to write command payload to com port\n");
+             return -1;
+@@ -267,7 +267,7 @@
+ 
+     /* Read message header first, handle EINTR as it is a blocking call */
+     do {
+-        n = read(fd, &hdr[0], (size_t)HEADER_CMD_SIZE);
++        n = read_c(fd, &hdr[0], (size_t)HEADER_CMD_SIZE);
+     } while (n == -1 && errno == EINTR);
+ 
+     if (n == -1) {
+@@ -310,7 +310,7 @@
+         do {
+             /* handle EINTR as it is a blocking call */
+             do {
+-                n = read(fd, &buf[nb_read], size - nb_read);
++                n = read_c(fd, &buf[nb_read], size - nb_read);
+             } while (n == -1 && errno == EINTR);
+ 
+             if (n == -1) {

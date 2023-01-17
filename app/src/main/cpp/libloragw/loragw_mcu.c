@@ -212,7 +212,7 @@ int write_req(int fd, order_id_t cmd, const uint8_t * payload, uint16_t payload_
     buf_w[1] = (uint8_t)(payload_size >> 8); /* MSB */
     buf_w[2] = (uint8_t)(payload_size >> 0); /* LSB */
     buf_w[3] = cmd;
-    n = write(fd, buf_w, HEADER_CMD_SIZE);
+    n = write_c(fd, buf_w, HEADER_CMD_SIZE);
     if (n < 0) {
         printf("ERROR: failed to write command header to com port\n");
         return -1;
@@ -224,7 +224,7 @@ int write_req(int fd, order_id_t cmd, const uint8_t * payload, uint16_t payload_
             printf("ERROR: invalid payload\n");
             return -1;
         }
-        n = write(fd, payload, payload_size);
+        n = write_c(fd, payload, payload_size);
         if (n < 0) {
             printf("ERROR: failed to write command payload to com port\n");
             return -1;
@@ -267,7 +267,7 @@ int read_ack(int fd, uint8_t * hdr, uint8_t * buf, size_t buf_size) {
 
     /* Read message header first, handle EINTR as it is a blocking call */
     do {
-        n = read(fd, &hdr[0], (size_t)HEADER_CMD_SIZE);
+        n = read_c(fd, &hdr[0], (size_t)HEADER_CMD_SIZE);
     } while (n == -1 && errno == EINTR);
 
     if (n == -1) {
@@ -310,7 +310,7 @@ int read_ack(int fd, uint8_t * hdr, uint8_t * buf, size_t buf_size) {
         do {
             /* handle EINTR as it is a blocking call */
             do {
-                n = read(fd, &buf[nb_read], size - nb_read);
+                n = read_c(fd, &buf[nb_read], size - nb_read);
             } while (n == -1 && errno == EINTR);
 
             if (n == -1) {

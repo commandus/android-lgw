@@ -113,6 +113,13 @@ do
     done
 done
 
+# Replace write() to write_c(), read() to read_c()
+patch $DST/libloragw/loragw_mcu.c -i loragw_mcu.c.patch
+
+# Replace read() to read_c()
+patch $DST/libloragw/loragw_usb.c -i loragw_usb.c.patch
+
+# Make C++ friendly
 patch $INC_DIR/loragw_hal.h -i loragw_hal.h.patch
 exit 0
 

@@ -12,6 +12,7 @@ import java.util.ArrayList;
 
 public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHolder> {
 
+    private final RecyclerView recyclerView;
     public ArrayList<String> logData;
 
     public void push(String item) {
@@ -19,6 +20,8 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
         if (logData.size() > 256)
             logData.remove(0);
         notifyDataSetChanged();
+        if (recyclerView != null)
+            recyclerView.smoothScrollToPosition(logData.size() - 1);
     }
 
     /**
@@ -41,7 +44,8 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
 
     // Create new views (invoked by the layout manager)
 
-    public PayloadAdapter() {
+    public PayloadAdapter(RecyclerView rv) {
+        recyclerView = rv;
         logData = new ArrayList<String>();
     }
 

@@ -3,23 +3,17 @@
     <string name="region_dialog_title">Region</string>
     <string name="select">Select</string>
     <string name="cancel">Cancel</string>
-    <string name="message_disconnected">Disconnected</string>
-    <string name="message_connected">Connected</string>
-    <string name="label_usb_on">USB</string>
-    <string name="label_usb_off">usb</string>
-    <string name="label_device_ready"><![CDATA[>]]></string>
-    <string name="label_device_disconnect">*</string>
+    <string name="label_disconnected">Disconnected</string>
+    <string name="label_connected">Connected</string>
     <string name="gateway_on">On</string>
     <string name="gateway_off">Off</string>
     <string name="title_activity_devices">DevicesActivity</string>
     <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">First Fragment</string>
-    <string name="second_fragment_label">Second Fragment</string>
+    <string name="fragment_device_list_label">Devices</string>
+    <string name="fragment_device">Device</string>
     <string name="label_add">Add</string>
 
-    <string name="hello_first_fragment">Hello first fragment</string>
-    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
-    <string name="label_button_devices">Add device</string>
+    <string name="label_button_devices">Devices</string>
     <string name="label_button_device_count">\"Devices: \"</string>
     <string name="label_device_address">Address</string>
     <string name="label_device_eui">EUI</string>
@@ -28,9 +22,9 @@
     <string name="label_device_name">Name</string>
     <string name="label_device_delete">Delete</string>
     <string name="label_device_save">Save</string>
-    <string name="label_device_new_device">New device</string>
+    <string name="label_device_new_device_state"></string>
     <string name="label_usb_gateway">USB gateway</string>
     <string name="label_stopped">Stopped</string>
-    <string name="label_disconnected">Disconnected</string>
     <string name="label_region">Region</string>
+    <string name="label_zero">0</string>
 </resources>

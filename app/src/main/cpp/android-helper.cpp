@@ -23,6 +23,8 @@ static jmethodID android_LGW_onDisconnected = nullptr;
 static jmethodID android_LGW_onValue = nullptr;
 static jmethodID android_LGW_onStart = nullptr;
 static jmethodID android_LGW_onFinish = nullptr;
+static jmethodID android_LGW_onRead = nullptr;
+static jmethodID android_LGW_onWrite = nullptr;
 static jmethodID android_LGW_open = nullptr;
 static jmethodID android_LGW_close = nullptr;
 
@@ -50,6 +52,9 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_setPayloadListener(
         android_LGW_onStart = env->GetMethodID(loggerClass, "onStarted","(ILjava/lang/String;Ljava/lang/String;I)V");
         android_LGW_onFinish = env->GetMethodID(loggerClass, "onFinished", "(Ljava/lang/String;)V");
 
+        android_LGW_onRead = env->GetMethodID(loggerClass, "onRead", "()[B");
+        android_LGW_onWrite = env->GetMethodID(loggerClass, "onWrite", "([B)I");
+
         android_LGW_open = nullptr;
         android_LGW_close = nullptr;
     } else {
@@ -63,6 +68,9 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_setPayloadListener(
         android_LGW_onValue = nullptr;
         android_LGW_onStart = nullptr;
         android_LGW_onFinish = nullptr;
+
+        android_LGW_onRead = nullptr;
+        android_LGW_onWrite = nullptr;
 
         android_LGW_open = nullptr;
         android_LGW_close = nullptr;
@@ -88,7 +96,7 @@ extern "C" int open_c(
     int flags
 )
 {
-    return 0;
+    return 1;
 }
 
 static JNIEnv *getJavaEnv(bool &requireDetach) {
@@ -397,4 +405,52 @@ Java_com_commandus_lgw_LGW_regionNames(
     if (requireDetach)
         jVM->DetachCurrentThread();
     return result;
+}
+
+extern "C" ssize_t read_c(int fd, void *buf, size_t count)
+{
+    if (!loggerObject || !android_LGW_onRead)
+        return -1;
+
+    bool requireDetach;
+    JNIEnv *jEnv = getJavaEnv(requireDetach);
+    if (!jEnv || !loggerObject)
+        return -1;
+    jbyteArray jb = jEnv->NewByteArray(count);
+    if (!jb)
+        return -1;
+    jbyteArray a = static_cast<jbyteArray>(jEnv->CallObjectMethod(loggerObject, android_LGW_onRead));
+    if (!a)
+        return -1;
+    jbyte *ae = jEnv->GetByteArrayElements(a, 0);
+    jsize len = jEnv->GetArrayLength(a);
+    for (int i = 0; i < len; ++i ) {
+        *((char *) buf) = ae[i];
+    }
+
+    if (requireDetach)
+        jVM->DetachCurrentThread();
+
+    return len;
+}
+
+extern "C" ssize_t write_c(int fd, const void *buf, size_t count)
+{
+    if (!loggerObject || !android_LGW_onWrite)
+        return -1;
+
+    bool requireDetach;
+    JNIEnv *jEnv = getJavaEnv(requireDetach);
+    if (!jEnv || !loggerObject)
+        return -1;
+    jbyteArray jb = jEnv->NewByteArray(count);
+    if (!jb)
+        return -1;
+    jEnv->SetByteArrayRegion(jb, 0, count, (jbyte*) buf);
+    int r = jEnv->CallIntMethod(loggerObject, android_LGW_onWrite, jb);
+
+    if (requireDetach)
+        jVM->DetachCurrentThread();
+
+    return r;
 }

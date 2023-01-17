@@ -2,7 +2,7 @@
 
 #include "errlist.h"
 
-// libloragw.a: subst-call-c.c calls to LibLoragwHelper
+// libloragw.a: subst-conFinishedall-c.c calls to LibLoragwHelper
 
 LibLoragwHelper *globalLibLoragwHelper = nullptr;
 

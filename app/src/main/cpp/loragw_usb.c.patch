@@ -1,0 +1,11 @@
+--- libloragw/loragw_usb.c	2023-01-17 11:25:52.134930079 +0900
++++ libloragw/loragw_usb.new.c	2023-01-17 11:25:52.142929949 +0900
+@@ -168,7 +168,7 @@
+         /* flush tty port before setting it as blocking */
+         printf("INFO: Flushing TTY\n");
+         do {
+-            n = read(fd, &data, 1);
++            n = read_c(fd, &data, 1);
+             if (n > 0) {
+                 printf("NOTE: flushing serial port (0x%2X)\n", data);
+             }

@@ -168,7 +168,7 @@ int lgw_usb_open(const char * com_path, void **com_target_ptr) {
         /* flush tty port before setting it as blocking */
         printf("INFO: Flushing TTY\n");
         do {
-            n = read(fd, &data, 1);
+            n = read_c(fd, &data, 1);
             if (n > 0) {
                 printf("NOTE: flushing serial port (0x%2X)\n", data);
             }

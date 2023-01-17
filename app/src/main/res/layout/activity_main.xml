@@ -27,13 +27,6 @@
             android:paddingStart="@dimen/lgwPadding"
             android:paddingEnd="@dimen/lgwPadding"
             >
-
-
-            <TextView
-                android:id="@+id/textDevice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="" />
             <Button
                 android:id="@+id/buttonRegion"
                 android:layout_width="wrap_content"
@@ -104,14 +97,6 @@
         app:layout_constraintBottom_toBottomOf="parent">
 
         <TextView
-            android:id="@+id/textStatusService"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingStart="@dimen/lgwPadding"
-            android:paddingEnd="@dimen/lgwPadding"
-            android:text="@string/label_usb_off" />
-
-        <TextView
             android:id="@+id/textStatusUSB"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -126,5 +111,23 @@
             android:paddingStart="@dimen/lgwPadding"
             android:paddingEnd="@dimen/lgwPadding"
             android:text="@string/label_stopped" />
+
+        <TextView
+            android:id="@+id/textLGWReadCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="20pt"
+            android:paddingStart="@dimen/lgwPadding"
+            android:paddingEnd="@dimen/lgwPadding"
+            android:text="@string/label_zero" />
+
+        <TextView
+            android:id="@+id/textLGWWriteCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="20pt"
+            android:paddingStart="@dimen/lgwPadding"
+            android:paddingEnd="@dimen/lgwPadding"
+            android:text="@string/label_zero" />
     </androidx.appcompat.widget.LinearLayoutCompat>
 </androidx.constraintlayout.widget.ConstraintLayout>

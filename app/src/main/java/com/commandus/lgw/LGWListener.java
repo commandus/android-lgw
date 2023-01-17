@@ -7,4 +7,6 @@ public interface LGWListener {
     void onDisconnected();
     void onStarted(int fd, String gatewayId, String regionName, int regionIndex);
     void onFinished(String message);
+    byte[] onRead();
+    int onWrite(byte[] data);
 }

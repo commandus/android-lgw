@@ -7,17 +7,17 @@
     tools:context=".AddressListFragment">
 
     <TextView
-        android:id="@+id/textview_device_address_list"
+        android:id="@+id/textview_device_address_list_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Device address"
+        android:text=""
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
          />
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewDeviceAddress"
-        app:layout_constraintTop_toBottomOf="@+id/textview_device_address_list"
+        app:layout_constraintTop_toBottomOf="@+id/textview_device_address_list_status"
         app:layout_constraintBottom_toTopOf="@+id/button_add"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

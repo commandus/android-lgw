@@ -80,18 +80,18 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
     }
 
     /**
-     * @return true- permission denied
+     * @return false- permission denied
      * */
     public boolean connectSerialPort() {
         onInfo("Connecting USB serial port..");
         usbSerialSocket = FTDI.open(this);
         if (usbSerialSocket == null) {
             onInfo("Error open serial port: " + FTDI.reason);
-            return true;
+            return false;
         }
         connected = usbSerialSocket.connect(this);
         onConnected(connected);
-        return false;
+        return connected;
     }
 
     public void disconnectSerialPort() {
@@ -131,12 +131,24 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
 
     @Override
     public void onConnected(boolean on) {
-
+        synchronized (this) {
+            mainLooper.post(() -> {
+                if (listener != null) {
+                    listener.onConnected(on);
+                }
+            });
+        }
     }
 
     @Override
     public void onDisconnected() {
-
+        synchronized (this) {
+            mainLooper.post(() -> {
+                if (listener != null) {
+                    listener.onDisconnected();
+                }
+            });
+        }
     }
 
     @Override
@@ -159,6 +171,41 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
                 }
             });
         }
+    }
+
+    @Override
+    public byte[] onRead() {
+        if (usbSerialSocket != null) {
+            byte[] r = usbSerialSocket.read();
+            if (listener != null) {
+                synchronized (this) {
+                    mainLooper.post(() -> {
+                        if (listener != null) {
+                            listener.onRead();
+                        }
+                    });
+                }
+            }
+            return r;
+        }
+        return new byte[0];
+    }
+
+    @Override
+    public int onWrite(byte[] data) {
+        if (usbSerialSocket == null)
+            return -1; // error
+        int r = usbSerialSocket.write(data);
+        if (listener != null) {
+            synchronized (this) {
+                mainLooper.post(() -> {
+                    if (listener != null) {
+                        listener.onRead();
+                    }
+                });
+            }
+        }
+        return r;
     }
 
     @Override

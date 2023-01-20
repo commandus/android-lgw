@@ -20,7 +20,7 @@ License: Revised BSD License, see LICENSE.TXT file include in the project
 
 #include <stdint.h>     /* C99 types */
 #include <stdbool.h>    /* bool type */
-#include <stdio.h>      /* printf fprintf */
+#include <stdio.h>      /* printf_c fprintf_c */
 #include <stdlib.h>     /* rand */
 #include <unistd.h>     /* lseek, close */
 #include <string.h>     /* memset */
@@ -35,9 +35,9 @@ License: Revised BSD License, see LICENSE.TXT file include in the project
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #if DEBUG_MCU == 1
-    #define DEBUG_MSG(str)                printf_c("%s", str)
-    #define DEBUG_PRINTF(fmt, args...)    printf_c( fmt, args)
-    #define CHECK_NULL(a)                if(a==NULL){printf_c("%s:%d: ERROR: NULL POINTER AS ARGUMENT\n", __FUNCTION__, __LINE__);return -1;}
+    #define DEBUG_MSG(str)                printf_c_c("%s", str)
+    #define DEBUG_PRINTF(fmt, args...)    printf_c_c( fmt, args)
+    #define CHECK_NULL(a)                if(a==NULL){printf_c_c("%s:%d: ERROR: NULL POINTER AS ARGUMENT\n", __FUNCTION__, __LINE__);return -1;}
 #else
     #define DEBUG_MSG(str)
     #define DEBUG_PRINTF(fmt, args...)
@@ -82,12 +82,12 @@ int spi_req_bulk_insert(spi_req_bulk_t * bulk_buffer, uint8_t * req, uint16_t re
     CHECK_NULL(req);
 
     if (bulk_buffer->nb_req == 255) {
-        printf("ERROR: cannot insert a new SPI request in bulk buffer - too many requests\n");
+        printf_c("ERROR: cannot insert a new SPI request in bulk buffer - too many requests\n");
         return -1;
     }
 
     if ((bulk_buffer->size + req_size) > LGW_USB_BURST_CHUNK) {
-        printf("ERROR: cannot insert a new SPI request in bulk buffer - buffer full\n");
+        printf_c("ERROR: cannot insert a new SPI request in bulk buffer - buffer full\n");
         return -1;
     }
 
@@ -203,7 +203,7 @@ int write_req(int fd, order_id_t cmd, const uint8_t * payload, uint16_t payload_
 
     /* Check input params */
     if (payload_size > MAX_SIZE_COMMAND) {
-        printf("ERROR: payload size exceeds maximum transfer size (req:%u, max:%d)\n", payload_size, MAX_SIZE_COMMAND);
+        printf_c("ERROR: payload size exceeds maximum transfer size (req:%u, max:%d)\n", payload_size, MAX_SIZE_COMMAND);
         return -1;
     }
 
@@ -212,21 +212,21 @@ int write_req(int fd, order_id_t cmd, const uint8_t * payload, uint16_t payload_
     buf_w[1] = (uint8_t)(payload_size >> 8); /* MSB */
     buf_w[2] = (uint8_t)(payload_size >> 0); /* LSB */
     buf_w[3] = cmd;
-    n = write_c(fd, buf_w, HEADER_CMD_SIZE);
+    n = write(fd, buf_w, HEADER_CMD_SIZE);
     if (n < 0) {
-        printf("ERROR: failed to write command header to com port\n");
+        printf_c("ERROR: failed to write command header to com port\n");
         return -1;
     }
 
     /* Write command payload */
     if (payload_size > 0) {
         if (payload == NULL) {
-            printf("ERROR: invalid payload\n");
+            printf_c("ERROR: invalid payload\n");
             return -1;
         }
-        n = write_c(fd, payload, payload_size);
+        n = write(fd, payload, payload_size);
         if (n < 0) {
-            printf("ERROR: failed to write command payload to com port\n");
+            printf_c("ERROR: failed to write command payload to com port\n");
             return -1;
         }
     }
@@ -236,12 +236,12 @@ int write_req(int fd, order_id_t cmd, const uint8_t * payload, uint16_t payload_
 #if DEBUG_VERBOSE
     int i;
     for (i = 0; i < 4; i++) {
-        printf("%02X ", buf_w[i]);
+        printf_c("%02X ", buf_w[i]);
     }
     for (i = 0; i < payload_size; i++) {
-        printf("%02X ", payload[i]);
+        printf_c("%02X ", payload[i]);
     }
-    printf("\n");
+    printf_c("\n");
 #endif
 
     /* Compute time spent in this function */
@@ -267,7 +267,7 @@ int read_ack(int fd, uint8_t * hdr, uint8_t * buf, size_t buf_size) {
 
     /* Read message header first, handle EINTR as it is a blocking call */
     do {
-        n = read_c(fd, &hdr[0], (size_t)HEADER_CMD_SIZE);
+        n = read(fd, &hdr[0], (size_t)HEADER_CMD_SIZE);
     } while (n == -1 && errno == EINTR);
 
     if (n == -1) {
@@ -281,12 +281,12 @@ int read_ack(int fd, uint8_t * hdr, uint8_t * buf, size_t buf_size) {
     _meas_time_stop(5, tm, "read_ack(hdr)");
 
 #if DEBUG_VERBOSE
-    printf("read_ack(hdr):");
+    printf_c("read_ack(hdr):");
     /* debug print */
     for (i = 0; i < (int)(HEADER_CMD_SIZE); i++) {
-        printf("%02X ", hdr[i]);
+        printf_c("%02X ", hdr[i]);
     }
-    printf("\n");
+    printf_c("\n");
 #endif
 
     /* Record function start time */
@@ -294,14 +294,14 @@ int read_ack(int fd, uint8_t * hdr, uint8_t * buf, size_t buf_size) {
 
     /* Check if the command id is valid */
     if ((cmd_get_type(hdr) < 0x40) || (cmd_get_type(hdr) > 0x46)) {
-        printf("ERROR: received wrong ACK type (0x%02X)\n", cmd_get_type(hdr));
+        printf_c("ERROR: received wrong ACK type (0x%02X)\n", cmd_get_type(hdr));
         return -1;
     }
 
     /* Get remaining payload size (metadata + pkt payload) */
     size = (size_t)cmd_get_size(hdr);
     if (size > buf_size) {
-        printf("ERROR: not enough memory to store all data (%zd)\n", size);
+        printf_c("ERROR: not enough memory to store all data (%zd)\n", size);
         return -1;
     }
 
@@ -310,7 +310,7 @@ int read_ack(int fd, uint8_t * hdr, uint8_t * buf, size_t buf_size) {
         do {
             /* handle EINTR as it is a blocking call */
             do {
-                n = read_c(fd, &buf[nb_read], size - nb_read);
+                n = read(fd, &buf[nb_read], size - nb_read);
             } while (n == -1 && errno == EINTR);
 
             if (n == -1) {
@@ -324,11 +324,11 @@ int read_ack(int fd, uint8_t * hdr, uint8_t * buf, size_t buf_size) {
 
 #if DEBUG_VERBOSE
         /* debug print */
-        printf("read_ack(pld):");
+        printf_c("read_ack(pld):");
         for (i = 0; i < (int)size; i++) {
-            printf("%02X ", buf[i]);
+            printf_c("%02X ", buf[i]);
         }
-        printf("\n");
+        printf_c("\n");
 #endif
     }
 
@@ -343,12 +343,12 @@ int read_ack(int fd, uint8_t * hdr, uint8_t * buf, size_t buf_size) {
 int decode_ack_ping(const uint8_t * hdr, const uint8_t * payload, s_ping_info * info) {
     /* sanity checks */
     if ((hdr == NULL) || (payload == NULL) || (info == NULL)) {
-        printf("ERROR: invalid parameter\n");
+        printf_c("ERROR: invalid parameter\n");
         return -1;
     }
 
     if (cmd_get_type(hdr) != ORDER_ID__ACK_PING) {
-        printf("ERROR: wrong ACK type for PING (expected:0x%02X, got 0x%02X)\n", ORDER_ID__ACK_PING, cmd_get_type(hdr));
+        printf_c("ERROR: wrong ACK type for PING (expected:0x%02X, got 0x%02X)\n", ORDER_ID__ACK_PING, cmd_get_type(hdr));
         return -1;
     }
 
@@ -376,12 +376,12 @@ int decode_ack_ping(const uint8_t * hdr, const uint8_t * payload, s_ping_info * 
 int decode_ack_bootloader_mode(const uint8_t * hdr) {
      /* sanity checks */
     if (hdr == NULL) {
-        printf("ERROR: invalid parameter\n");
+        printf_c("ERROR: invalid parameter\n");
         return -1;
     }
 
     if (cmd_get_type(hdr) != ORDER_ID__ACK_BOOTLOADER_MODE) {
-        printf("ERROR: wrong ACK type for ACK_BOOTLOADER_MODE (expected:0x%02X, got 0x%02X)\n", ORDER_ID__ACK_BOOTLOADER_MODE, cmd_get_type(hdr));
+        printf_c("ERROR: wrong ACK type for ACK_BOOTLOADER_MODE (expected:0x%02X, got 0x%02X)\n", ORDER_ID__ACK_BOOTLOADER_MODE, cmd_get_type(hdr));
         return -1;
     }
 
@@ -401,12 +401,12 @@ int decode_ack_get_status(const uint8_t * hdr, const uint8_t * payload, s_status
 
     /* sanity checks */
     if ((payload == NULL) || (status == NULL)) {
-        printf("ERROR: invalid parameter\n");
+        printf_c("ERROR: invalid parameter\n");
         return -1;
     }
 
     if (cmd_get_type(hdr) != ORDER_ID__ACK_GET_STATUS) {
-        printf("ERROR: wrong ACK type for GET_STATUS (expected:0x%02X, got 0x%02X)\n", ORDER_ID__ACK_GET_STATUS, cmd_get_type(hdr));
+        printf_c("ERROR: wrong ACK type for GET_STATUS (expected:0x%02X, got 0x%02X)\n", ORDER_ID__ACK_GET_STATUS, cmd_get_type(hdr));
         return -1;
     }
 
@@ -433,12 +433,12 @@ int decode_ack_get_status(const uint8_t * hdr, const uint8_t * payload, s_status
 
 int decode_ack_gpio_access(const uint8_t * hdr, const uint8_t * payload, uint8_t * write_status) {
     if ((hdr == NULL) || (payload == NULL) || (write_status == NULL)) {
-        printf("ERROR: invalid parameter\n");
+        printf_c("ERROR: invalid parameter\n");
         return -1;
     }
 
     if (cmd_get_type(hdr) != ORDER_ID__ACK_WRITE_GPIO) {
-        printf("ERROR: wrong ACK type for WRITE_GPIO (expected:0x%02X, got 0x%02X)\n", ORDER_ID__ACK_WRITE_GPIO, cmd_get_type(hdr));
+        printf_c("ERROR: wrong ACK type for WRITE_GPIO (expected:0x%02X, got 0x%02X)\n", ORDER_ID__ACK_WRITE_GPIO, cmd_get_type(hdr));
         return -1;
     }
 
@@ -460,12 +460,12 @@ int decode_ack_gpio_access(const uint8_t * hdr, const uint8_t * payload, uint8_t
 int decode_ack_spi_access(const uint8_t * hdr, const uint8_t * payload) {
     /* sanity checks */
     if ((hdr == NULL) || (payload == NULL)) {
-        printf("ERROR: invalid parameter\n");
+        printf_c("ERROR: invalid parameter\n");
         return -1;
     }
 
     if (cmd_get_type(hdr) != ORDER_ID__ACK_SPI) {
-        printf("ERROR: wrong ACK type for ACK_SPI (expected:0x%02X, got 0x%02X)\n", ORDER_ID__ACK_SPI, cmd_get_type(hdr));
+        printf_c("ERROR: wrong ACK type for ACK_SPI (expected:0x%02X, got 0x%02X)\n", ORDER_ID__ACK_SPI, cmd_get_type(hdr));
         return -1;
     }
 
@@ -487,12 +487,12 @@ int decode_ack_spi_bulk(const uint8_t * hdr, const uint8_t * payload) {
 
     /* sanity checks */
     if ((hdr == NULL) || (payload == NULL)) {
-        printf("ERROR: invalid parameter\n");
+        printf_c("ERROR: invalid parameter\n");
         return -1;
     }
 
     if (cmd_get_type(hdr) != ORDER_ID__ACK_MULTIPLE_SPI) {
-        printf("ERROR: wrong ACK type for ACK_MULTIPLE_SPI (expected:0x%02X, got 0x%02X)\n", ORDER_ID__ACK_MULTIPLE_SPI, cmd_get_type(hdr));
+        printf_c("ERROR: wrong ACK type for ACK_MULTIPLE_SPI (expected:0x%02X, got 0x%02X)\n", ORDER_ID__ACK_MULTIPLE_SPI, cmd_get_type(hdr));
         return -1;
     }
 
@@ -508,13 +508,13 @@ int decode_ack_spi_bulk(const uint8_t * hdr, const uint8_t * payload) {
         req_id      = payload[i + 0];
         req_type    = payload[i + 1];
         if (req_type != MCU_SPI_REQ_TYPE_READ_WRITE && req_type != MCU_SPI_REQ_TYPE_READ_MODIFY_WRITE) {
-            printf("ERROR: %s: wrong type for SPI request %u (0x%02X)\n", __FUNCTION__, req_id, req_type);
+            printf_c("ERROR: %s: wrong type for SPI request %u (0x%02X)\n", __FUNCTION__, req_id, req_type);
             return -1;
         }
         req_status  = payload[i + 2];
         if (req_status != 0) {
             /* Exit if any of the requests failed */
-            printf("ERROR: %s: SPI request %u failed with %u - %s\n", __FUNCTION__, req_id, req_status, spi_status_get_str(req_status));
+            printf_c("ERROR: %s: SPI request %u failed with %u - %s\n", __FUNCTION__, req_id, req_status, spi_status_get_str(req_status));
             return -1;
         }
 #if DEBUG_VERBOSE
@@ -555,17 +555,17 @@ int mcu_ping(int fd, s_ping_info * info) {
     CHECK_NULL(info);
 
     if (write_req(fd, ORDER_ID__REQ_PING, NULL, 0) != 0) {
-        printf("ERROR: failed to write PING request\n");
+        printf_c("ERROR: failed to write PING request\n");
         return -1;
     }
 
     if (read_ack(fd, buf_hdr, buf_ack, sizeof buf_ack) < 0) {
-        printf("ERROR: failed to read PING ack\n");
+        printf_c("ERROR: failed to read PING ack\n");
         return -1;
     }
 
     if (decode_ack_ping(buf_hdr, buf_ack, info) != 0) {
-        printf("ERROR: invalid PING ack\n");
+        printf_c("ERROR: invalid PING ack\n");
         return -1;
     }
 
@@ -576,17 +576,17 @@ int mcu_ping(int fd, s_ping_info * info) {
 
 int mcu_boot(int fd) {
     if (write_req(fd, ORDER_ID__REQ_BOOTLOADER_MODE, NULL, 0) != 0) {
-        printf("ERROR: failed to write BOOTLOADER_MODE request\n");
+        printf_c("ERROR: failed to write BOOTLOADER_MODE request\n");
         return -1;
     }
 
     if (read_ack(fd, buf_hdr, NULL, 0) < 0) {
-        printf("ERROR: failed to read BOOTLOADER_MODE ack\n");
+        printf_c("ERROR: failed to read BOOTLOADER_MODE ack\n");
         return -1;
     }
 
     if (decode_ack_bootloader_mode(buf_hdr) != 0) {
-        printf("ERROR: invalid BOOTLOADER_MODE ack\n");
+        printf_c("ERROR: invalid BOOTLOADER_MODE ack\n");
         return -1;
     }
 
@@ -601,17 +601,17 @@ int mcu_get_status(int fd, s_status * status) {
     CHECK_NULL(status);
 
     if (write_req(fd, ORDER_ID__REQ_GET_STATUS, NULL, 0) != 0) {
-        printf("ERROR: failed to write GET_STATUS request\n");
+        printf_c("ERROR: failed to write GET_STATUS request\n");
         return -1;
     }
 
     if (read_ack(fd, buf_hdr, buf_ack, sizeof buf_ack) < 0) {
-        printf("ERROR: failed to read GET_STATUS ack\n");
+        printf_c("ERROR: failed to read GET_STATUS ack\n");
         return -1;
     }
 
     if (decode_ack_get_status(buf_hdr, buf_ack, status) != 0) {
-        printf("ERROR: invalid GET_STATUS ack\n");
+        printf_c("ERROR: invalid GET_STATUS ack\n");
         return -1;
     }
 
@@ -629,22 +629,22 @@ int mcu_gpio_write(int fd, uint8_t gpio_port, uint8_t gpio_id, uint8_t gpio_valu
     buf_req[REQ_WRITE_GPIO__PIN]    = gpio_id;
     buf_req[REQ_WRITE_GPIO__STATE]  = gpio_value;
     if (write_req(fd, ORDER_ID__REQ_WRITE_GPIO, buf_req, REQ_WRITE_GPIO_SIZE) != 0) {
-        printf("ERROR: failed to write REQ_WRITE_GPIO request\n");
+        printf_c("ERROR: failed to write REQ_WRITE_GPIO request\n");
         return -1;
     }
 
     if (read_ack(fd, buf_hdr, buf_ack, sizeof buf_ack) < 0) {
-        printf("ERROR: failed to read PING ack\n");
+        printf_c("ERROR: failed to read PING ack\n");
         return -1;
     }
 
     if (decode_ack_gpio_access(buf_hdr, buf_ack, &status) != 0) {
-        printf("ERROR: invalid REQ_WRITE_GPIO ack\n");
+        printf_c("ERROR: invalid REQ_WRITE_GPIO ack\n");
         return -1;
     }
 
     if (status != 0) {
-        printf("ERROR: Failed to write GPIO (port:%u id:%u value:%u)\n", gpio_port, gpio_id, gpio_value);
+        printf_c("ERROR: Failed to write GPIO (port:%u id:%u value:%u)\n", gpio_port, gpio_id, gpio_value);
         return -1;
     }
 
@@ -658,17 +658,17 @@ int mcu_spi_write(int fd, uint8_t * in_out_buf, size_t buf_size) {
     CHECK_NULL(in_out_buf);
 
     if (write_req(fd, ORDER_ID__REQ_MULTIPLE_SPI, in_out_buf, buf_size) != 0) {
-        printf("ERROR: failed to write REQ_MULTIPLE_SPI request\n");
+        printf_c("ERROR: failed to write REQ_MULTIPLE_SPI request\n");
         return -1;
     }
 
     if (read_ack(fd, buf_hdr, in_out_buf, buf_size) < 0) {
-        printf("ERROR: failed to read REQ_MULTIPLE_SPI ack\n");
+        printf_c("ERROR: failed to read REQ_MULTIPLE_SPI ack\n");
         return -1;
     }
 
     if (decode_ack_spi_bulk(buf_hdr, in_out_buf) != 0) {
-        printf("ERROR: invalid REQ_MULTIPLE_SPI ack\n");
+        printf_c("ERROR: invalid REQ_MULTIPLE_SPI ack\n");
         return -1;
     }
 
@@ -688,7 +688,7 @@ int mcu_spi_store(uint8_t * in_out_buf, size_t buf_size) {
 int mcu_spi_flush(int fd) {
     /* Write pending SPI requests to MCU */
     if (mcu_spi_write(fd, spi_bulk_buffer.buffer, spi_bulk_buffer.size) != 0) {
-        printf("ERROR: %s: failed to write SPI requests to MCU\n", __FUNCTION__);
+        printf_c("ERROR: %s: failed to write SPI requests to MCU\n", __FUNCTION__);
         return -1;
     }
 

@@ -7,15 +7,18 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbDeviceConnection;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.InvalidParameterException;
+import java.util.Date;
 
+import com.commandus.lgw.LgwHelper;
 import com.commandus.lgw.LgwSettings;
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 
 public class SerialSocket {
-
     private final BroadcastReceiver disconnectBroadcastReceiver;
 
     private final Context context;
@@ -23,12 +26,12 @@ public class SerialSocket {
     public UsbDeviceConnection connection;
     public UsbSerialPort serialPort;
 
-    private final int defaultTimeout = 0; // ms
+    private int readWriteTimeout = 100; // ms
     private ByteBuffer mReadBuffer;
     private final Object mReadBufferLock = new Object();
 
     public byte[] read() {
-        return read(defaultTimeout);
+        return read(readWriteTimeout);
     }
 
     /**
@@ -37,24 +40,29 @@ public class SerialSocket {
      * @return -1 - error, >0- count of bytes
      */
     public byte[] read(int timeoutMs) {
+        LgwHelper.log2file("SerialSocket Read.. ");
         byte[] buffer;
         synchronized (mReadBufferLock) {
             buffer = mReadBuffer.array();
         }
         try {
             int len = serialPort.read(buffer, timeoutMs);
+            LgwHelper.log2file("SerialSocket Read " + Integer.toString(len));
             if (len > 0) {
                 final byte[] data = new byte[len];
                 System.arraycopy(buffer, 0, data, 0, len);
+                LgwHelper.log2file(LgwHelper.bytesToHex(data));
                 return data;
             }
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            LgwHelper.log2file("SerialSocket Read I/O error" + e.toString());
         }
+        LgwHelper.log2file("SerialSocket Read nothing");
         return new byte[0];
     }
 
     public int write(byte[] buffer) {
-        return write(buffer, defaultTimeout);
+        return write(buffer, readWriteTimeout);
     }
 
     /**
@@ -64,6 +72,7 @@ public class SerialSocket {
      * @return bytes written
      */
     public int write(byte[] buffer, int timeoutMs) {
+        LgwHelper.log2file("SerialSocket write " + buffer.length + " bytes: " + LgwHelper.bytesToHex(buffer));
         try {
             serialPort.write(buffer, timeoutMs);
         } catch (IOException ignored) {
@@ -128,5 +137,12 @@ public class SerialSocket {
             context.unregisterReceiver(disconnectBroadcastReceiver);
         } catch (Exception ignored) {
         }
+    }
+
+    public void setBlocking(boolean blocking) {
+        if (blocking)
+            readWriteTimeout = 0;
+        else
+            readWriteTimeout = 100; // ms
     }
 }

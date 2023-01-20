@@ -8,7 +8,7 @@ public class LGW {
     public native String version();
     public native String[] regionNames();
     public native void setPayloadListener(LGWListener logger);
-    public native int start(int fd, int regionIdx, String gwId);
+    public native int start(int regionIndex, String gwId, int verbosity);
     public native void stop();
 }
 

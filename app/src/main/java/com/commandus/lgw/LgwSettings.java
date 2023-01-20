@@ -2,7 +2,12 @@ package com.commandus.lgw;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Environment;
 import android.preference.PreferenceManager;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.Date;
 
 public class LgwSettings {
     public static final int USB_VENDOR_ID = 0x0483; // 0x16d0;
@@ -18,6 +23,7 @@ public class LgwSettings {
 
     private String mTheme; // light|dark
     private int mRegionIndex;
+    private int mVerbosity = 7;
 
     public String getTheme() {
         return mTheme;
@@ -59,4 +65,11 @@ public class LgwSettings {
         mRegionIndex = value;
     }
 
+    public boolean isFileLog() {
+        return true;
+    }
+
+    public int getVerbosity() {
+        return mVerbosity;
+    }
 }

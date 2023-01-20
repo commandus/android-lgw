@@ -36,7 +36,7 @@ License: Revised BSD License, see LICENSE.TXT file include in the project
 /* --- PRIVATE MACROS ------------------------------------------------------- */
 
 #if DEBUG_LBT == 1
-    #define DEBUG_MSG(str)                printf_c( str)
+    #define DEBUG_MSG(str)                printf_c("%s", str)
     #define DEBUG_PRINTF(fmt, args...)    printf_c("%s:%d: "fmt, __FUNCTION__, __LINE__, args)
 #else
     #define DEBUG_MSG(str)

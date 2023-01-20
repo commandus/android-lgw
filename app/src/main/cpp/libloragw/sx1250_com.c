@@ -28,7 +28,7 @@ License: Revised BSD License, see LICENSE.TXT file include in the project
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #if DEBUG_RAD == 1
-    #define DEBUG_MSG(str)                printf_c( str)
+    #define DEBUG_MSG(str)                printf_c("%s", str)
     #define DEBUG_PRINTF(fmt, args...)    printf_c("%s:%d: "fmt, __FUNCTION__, __LINE__, args)
     #define CHECK_NULL(a)                if(a==NULL){printf_c("%s:%d: ERROR: NULL POINTER AS ARGUMENT\n", __FUNCTION__, __LINE__);return -1;}
 #else

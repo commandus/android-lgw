@@ -43,7 +43,7 @@ License: Revised BSD License, see LICENSE.TXT file include in the project
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #if DEBUG_GPS == 1
-    #define DEBUG_MSG(args...)  printf_c( args)
+    #define DEBUG_MSG(args...)  printf_c("%s", args)
     #define DEBUG_PRINTF(fmt, args...)    printf_c("%s:%d: "fmt, __FUNCTION__, __LINE__, args)
     #define DEBUG_ARRAY(a,b,c)  for(a=0;a<b;++a) printf_c("%x.",c[a]);printf_c("end\n")
     #define CHECK_NULL(a)       if(a==NULL){printf_c("%s:%d: ERROR: NULL POINTER AS ARGUMENT\n", __FUNCTION__, __LINE__);return LGW_GPS_ERROR;}
@@ -344,7 +344,7 @@ static int lgw_gps_enable_uart(char *tty_path, char *gps_family, speed_t target_
     }
 
     /* get actual serial port configuration */
-    i = tcgetattr(gps_tty_dev, &ttyopt);
+    i = tcgetattr_c(gps_tty_dev, &ttyopt);
     if (i != 0) {
         DEBUG_MSG("ERROR: IMPOSSIBLE TO GET TTY PORT CONFIGURATION\n");
         return LGW_GPS_ERROR;
@@ -392,7 +392,7 @@ static int lgw_gps_enable_uart(char *tty_path, char *gps_family, speed_t target_
     ttyopt.c_cc[VTIME] = 0;
 
     /* set new serial ports parameters */
-    i = tcsetattr(gps_tty_dev, TCSANOW, &ttyopt);
+    i = tcsetattr_c(gps_tty_dev, TCSANOW, &ttyopt);
     if (i != 0){
         DEBUG_MSG("ERROR: IMPOSSIBLE TO UPDATE TTY PORT CONFIGURATION\n");
         return LGW_GPS_ERROR;
@@ -439,7 +439,7 @@ int lgw_gps_disable(int fd) {
     int i;
 
     /* restore serial ports parameters */
-    i = tcsetattr(fd, TCSANOW, &ttyopt_restore);
+    i = tcsetattr_c(fd, TCSANOW, &ttyopt_restore);
     if (i != 0){
         DEBUG_MSG("ERROR: IMPOSSIBLE TO RESTORE TTY PORT CONFIGURATION - %s\n", strerror(errno));
         return LGW_GPS_ERROR;

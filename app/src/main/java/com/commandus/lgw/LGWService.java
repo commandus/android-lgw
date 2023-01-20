@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -15,13 +16,16 @@ import com.commandus.ftdi.FTDI;
 import com.commandus.ftdi.SerialErrorListener;
 import com.commandus.ftdi.SerialSocket;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.Date;
+
 /**
  * create notification and queue serial data while activity is not in the foreground
  */
 public class LGWService extends Service implements LGWListener, SerialErrorListener {
 
     private SerialSocket usbSerialSocket;
-
     /**
      * Return opened USB COM port
      * @return >0 file descriptor, 0- no USB device found, <0- system error while open port
@@ -114,10 +118,26 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
         }
     }
 
+    public static final String LOG_FILE_NAME = "lgw.log";
+
+    private void log2file(String message) {
+        if (true) {
+            try {
+                File docs = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "/lgw_com.log");
+                FileOutputStream output = new FileOutputStream(docs.getAbsoluteFile(), true);
+                output.write((new Date().toString() + ": " + message + "\n").getBytes());
+                output.close();
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
     @Override
     public void onInfo(
         String message
     ) {
+        log2file(message);
+
         synchronized (this) {
             if (listener != null) {
                 mainLooper.post(() -> {
@@ -152,11 +172,11 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
     }
 
     @Override
-    public void onStarted(int fd, String gatewayId, String regionName, int regionIndex) {
+    public void onStarted(String gatewayId, String regionName, int regionIndex) {
         synchronized (this) {
             mainLooper.post(() -> {
                 if (listener != null) {
-                    listener.onStarted(fd, gatewayId, regionName, regionIndex);
+                    listener.onStarted(gatewayId, regionName, regionIndex);
                 }
             });
         }
@@ -193,6 +213,7 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
 
     @Override
     public int onWrite(byte[] data) {
+        onInfo("Write " + data.length + " bytes");
         if (usbSerialSocket == null)
             return -1; // error
         int r = usbSerialSocket.write(data);
@@ -200,12 +221,19 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
             synchronized (this) {
                 mainLooper.post(() -> {
                     if (listener != null) {
-                        listener.onRead();
+                        listener.onWrite(data);
                     }
                 });
             }
         }
         return r;
+    }
+
+    @Override
+    public int onSetAttr(boolean blocking) {
+        usbSerialSocket.setBlocking(blocking);
+        onInfo("Set blocking mode " + blocking);
+        return 0;
     }
 
     @Override
@@ -224,11 +252,12 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
     }
 
     @SuppressLint("HardwareIds")
-    boolean startGateway(int fd, int regionIndex) {
+    boolean startGateway(int regionIndex, int verbosity) {
         if (lgw == null)
             return false;
         lgw.setPayloadListener(this);
-        return lgw.start(fd, regionIndex, Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID)) == 0;
+        return lgw.start(regionIndex, Settings.Secure.getString(getContentResolver(),
+                Settings.Secure.ANDROID_ID), verbosity) == 0;
     }
 
     void stopGateway() {
@@ -243,5 +272,4 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
             return null;
         return lgw.regionNames();
     }
-
 }

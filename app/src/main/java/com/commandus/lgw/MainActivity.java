@@ -13,6 +13,7 @@ import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -178,22 +179,25 @@ public class MainActivity extends AppCompatActivity
     }
 
     private boolean startLGW() {
-        if (service == null)
+        if (service == null) {
+            onInfo("startLGW: no service");
             return false;
+        }
 
         if (!isUSBConnected()) {
+            onInfo("startLGW: no USB connection");
             if (FTDI.hasDevice(MainActivity.this)) {
                 connectUSB();
             }
         }
-        if (!isUSBConnected())
+        if (!isUSBConnected()) {
+            onInfo("startLGW: no USB connection established");
             return false;
+        }
 
-        int fd = service.getUSBPortFileDescriptor();
         int regionIndex = lgwSettings.getRegionIndex();
-        if (fd <= 0)
-            return false;
-        return service.startGateway(fd, regionIndex);
+        int verbosity = lgwSettings.getVerbosity();
+        return service.startGateway(regionIndex, verbosity);
     }
 
     @Override
@@ -252,9 +256,9 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onStarted(int fd, String gatewayId, String regionName, int regionIndex) {
+    public void onStarted(String gatewayId, String regionName, int regionIndex) {
         switchGateway.setText(R.string.gateway_on);
-        payloadAdapter.push("Started " + gatewayId + " " + regionName + " descriptor " + fd);
+        payloadAdapter.push("Started " + gatewayId + " " + regionName);
     }
 
     @Override
@@ -278,6 +282,11 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    public int onSetAttr(boolean blocking) {
+        return 0;
+    }
+
+    @Override
     public void onValue(Payload value) {
         payloadAdapter.push(value.hexPayload);
     }
@@ -285,6 +294,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onInfo(String msg)
     {
+        Log.d("main", msg);
         payloadAdapter.push(msg);
     }
 
@@ -313,6 +323,7 @@ public class MainActivity extends AppCompatActivity
     private void connectUSB() {
         onInfo("Connecting..");
         if (service == null) {
+            onInfo("No service");
             setUIUSBConnected(false);
             return;
         }
@@ -327,12 +338,13 @@ public class MainActivity extends AppCompatActivity
         } else {
             onInfo("Unknown USB device");
         }
-        onInfo("Connected: " + service.connected);
         setUIUSBConnected(service.connected);
         if (service.connected)
             soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
         if (service.connected)
             onInfo("Successfully connected");
+        else
+            onInfo("Not connected");
     }
 
     private void setUIUSBConnected(boolean connected) {

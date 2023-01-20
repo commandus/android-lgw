@@ -92,10 +92,19 @@ cp $JITQUEUE_SRC_DIR/jitqueue.c $DST/jitqueue
 
 declare -a search_replace
 
-search_replaces[0]='fprintf\(stdout,|printf_c('
-search_replaces[1]='fprintf\(stderr,|printf_c('
-search_replaces[2]=' open\(|open_c('
-search_replaces[3]=' close\(|close_c('
+PRM='#define printf_c(fmt, args...) {char line[4096]; snprintf(line, sizeof(line), fmt, args); printf_c1("%s", line);}'
+echo $PRM
+
+
+search_replaces[0]='fprintf\(stdout, str\)|printf_c("%s", str)'
+search_replaces[1]='fprintf\(stderr, args\)|printf_c("%s", args)'
+search_replaces[2]='fprintf\(stdout,|printf_c('
+search_replaces[3]='fprintf\(stderr,|printf_c('
+search_replaces[4]=' open\(|open_c('
+search_replaces[5]=' close\(|close_c('
+search_replaces[6]='tcgetattr\(|tcgetattr_c('
+search_replaces[7]='tcsetattr\(|tcsetattr_c('
+# search_replaces[8]='printf|printf_c'
 
 for search_replace in "${search_replaces[@]}"
 do

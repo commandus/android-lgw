@@ -8,9 +8,9 @@
 #define DEF_BUFFER_SIZE     4096
 
 PacketListener::PacketListener() :
-        sysSignalPtr(nullptr), verbosity(0), stopped(false), eventProcessor(nullptr), onGatewayStatDump(nullptr), gwStatEnv(nullptr),
-        onDeviceStatDump(nullptr), deviceStatEnv(nullptr),
-        handler(nullptr), identityService(nullptr), gatewayList(nullptr), deviceHistoryService(nullptr)
+	sysSignalPtr(nullptr), verbosity(0), stopped(false), eventProcessor(nullptr),
+	onGatewayStatDump(nullptr), gwStatEnv(nullptr),	onDeviceStatDump(nullptr), deviceStatEnv(nullptr),
+	handler(nullptr), identityService(nullptr), gatewayList(nullptr), deviceHistoryService(nullptr)
 {
 }
 
@@ -19,8 +19,8 @@ PacketListener::~PacketListener() {
 }
 
 void PacketListener::setLogger(
-        int aVerbosity,
-        LGWEventIntf *value
+	int aVerbosity,
+	LGWEventIntf *value
 )
 {
 	verbosity = aVerbosity;

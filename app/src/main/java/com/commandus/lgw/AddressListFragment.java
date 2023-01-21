@@ -8,12 +8,16 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.commandus.lgw.databinding.FragmentAddressListBinding;
 
-public class AddressListFragment extends Fragment {
+public class AddressListFragment extends Fragment
+        implements AddressSelection {
 
     private FragmentAddressListBinding binding;
+    DeviceAddressAdapter deviceAddressAdapter;
+    private RecyclerView recyclerViewDeviceAddress;
 
     @Override
     public View onCreateView(
@@ -21,6 +25,12 @@ public class AddressListFragment extends Fragment {
             Bundle savedInstanceState
     ) {
         binding = FragmentAddressListBinding.inflate(inflater, container, false);
+
+        recyclerViewDeviceAddress = binding.recyclerViewDeviceAddress;
+
+        deviceAddressAdapter = new DeviceAddressAdapter(recyclerViewDeviceAddress, this);
+        recyclerViewDeviceAddress.setAdapter(deviceAddressAdapter);
+
         return binding.getRoot();
     }
 
@@ -42,4 +52,9 @@ public class AddressListFragment extends Fragment {
         binding = null;
     }
 
+    @Override
+    public void onSelect(int position) {
+        NavHostFragment.findNavController(AddressListFragment.this)
+                .navigate(R.id.action_FirstFragment_to_SecondFragment);
+    }
 }

@@ -28,6 +28,17 @@ public class DeviceAddressProvider extends ContentProvider {
     static final String FN_APPSKEY = "appSKey";
     static final String FN_NAME = "name";
 
+    public static final int F_ID = 0;
+    public static final int F_ADDRESS = 1;
+    public static final int F_EUI = 2;
+    public static final int F_NWKSKEY = 3;
+    public static final int F_APPSKEY = 4;
+    public static final int F_NAME = 5;
+
+    public static final String[] PROJECTION = {
+            FN_ID, FN_ADDRESS, FN_EUI, FN_NWKSKEY, FN_APPSKEY, FN_NAME
+    };
+
     static final UriMatcher uriMatcher;
     static final int M_ADDRESSES = 1;
     static final int M_ADDRESS = 2;

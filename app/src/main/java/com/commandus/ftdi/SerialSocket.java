@@ -7,12 +7,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbDeviceConnection;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.InvalidParameterException;
-import java.util.Date;
 
 import com.commandus.lgw.LgwHelper;
 import com.commandus.lgw.LgwSettings;
@@ -28,37 +26,65 @@ public class SerialSocket {
 
     private int readWriteTimeout = 100; // ms
     private ByteBuffer mReadBuffer;
+    private int mCountReadBuffer;
+    private int mPositionReadBuffer;
     private final Object mReadBufferLock = new Object();
 
-    public byte[] read() {
-        return read(readWriteTimeout);
+    public byte[] read(int bytes) {
+        return read(bytes, readWriteTimeout);
     }
 
     /**
      * Read USB COM port
+     * @param count buffer size
      * @param timeoutMs the timeout for writing in milliseconds, 0 is infinite
      * @return -1 - error, >0- count of bytes
      */
-    public byte[] read(int timeoutMs) {
-        LgwHelper.log2file("SerialSocket Read.. ");
+    public byte[] read(int count, int timeoutMs) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int c = getFromBuffer(baos, count);
+        int remaining = count - c;
+        if (remaining > 0) {
+            readIntoBuffer(timeoutMs);
+            getFromBuffer(baos, remaining);
+        }
+        byte[] r = baos.toByteArray();
+        return r;
+    }
+
+    private int getFromBuffer(ByteArrayOutputStream os, int count) {
+        int sz = 0;
+        if (mCountReadBuffer > 0) {
+            // get from the buffer
+            int cnt = mCountReadBuffer - mPositionReadBuffer;
+            if (cnt <= 0) {
+                // reset
+                mCountReadBuffer = 0;
+                mPositionReadBuffer = 0;
+            } else {
+                // min size
+                sz = Math.min(count, cnt);
+                os.write(mReadBuffer.array(),  mPositionReadBuffer, sz);
+                mPositionReadBuffer += sz;
+            }
+        }
+        return sz;
+    }
+
+    /**
+     * Read USB COM port, set mBytesReadBuffer
+     * @param timeoutMs the timeout for writing in milliseconds, 0 is infinite
+     */
+    private void readIntoBuffer(int timeoutMs) {
+        mPositionReadBuffer = 0;
         byte[] buffer;
         synchronized (mReadBufferLock) {
             buffer = mReadBuffer.array();
         }
         try {
-            int len = serialPort.read(buffer, timeoutMs);
-            LgwHelper.log2file("SerialSocket Read " + Integer.toString(len));
-            if (len > 0) {
-                final byte[] data = new byte[len];
-                System.arraycopy(buffer, 0, data, 0, len);
-                LgwHelper.log2file(LgwHelper.bytesToHex(data));
-                return data;
-            }
-        } catch (IOException e) {
-            LgwHelper.log2file("SerialSocket Read I/O error" + e.toString());
+            mCountReadBuffer = serialPort.read(buffer, timeoutMs);
+        } catch (IOException ignored) {
         }
-        LgwHelper.log2file("SerialSocket Read nothing");
-        return new byte[0];
     }
 
     public int write(byte[] buffer) {
@@ -72,7 +98,6 @@ public class SerialSocket {
      * @return bytes written
      */
     public int write(byte[] buffer, int timeoutMs) {
-        LgwHelper.log2file("SerialSocket write " + buffer.length + " bytes: " + LgwHelper.bytesToHex(buffer));
         try {
             serialPort.write(buffer, timeoutMs);
         } catch (IOException ignored) {
@@ -84,9 +109,9 @@ public class SerialSocket {
     SerialSocket(Context context, UsbDeviceConnection connection, UsbSerialPort serialPort) {
         if (context instanceof Activity)
             throw new InvalidParameterException("expected non UI context");
-
-        mReadBuffer = ByteBuffer.allocate(serialPort.getReadEndpoint().getMaxPacketSize());
-
+        mReadBuffer = ByteBuffer.allocate(4096);
+        mCountReadBuffer = 0;
+        mPositionReadBuffer = 0;
         this.context = context;
         this.connection = connection;
         this.serialPort = serialPort;

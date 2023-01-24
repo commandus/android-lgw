@@ -195,12 +195,14 @@ int lgw_usb_open(const char * com_path, void **com_target_ptr) {
             printf_c1("ERROR: failed to ping the concentrator MCU\n");
             return LGW_USB_ERROR;
         }
+        printf_c("INFO: Version %s\n", mcu_version_string);
         if (strncmp(gw_info.version + 1, mcu_version_string, sizeof mcu_version_string) != 0) {
             printf_c("WARNING: MCU version mismatch (expected:%s, got:%s)\n", mcu_version_string, gw_info.version);
         }
         printf_c("INFO: Concentrator MCU version is %s\n", gw_info.version);
 
         /* Get MCU status */
+        printf_c("INFO: mcu_get_status %d\n", sizeof(mcu_status));
         if (mcu_get_status(fd, &mcu_status) != 0) {
             printf_c1("ERROR: failed to get status from the concentrator MCU\n");
             return LGW_USB_ERROR;

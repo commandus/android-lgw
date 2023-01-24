@@ -65,7 +65,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_setPayloadListener(
                                                "(Ljava/lang/String;Ljava/lang/String;I)V");
         android_LGW_onFinish = env->GetMethodID(loggerClass, "onFinished", "(Ljava/lang/String;)V");
 
-        android_LGW_onRead = env->GetMethodID(loggerClass, "onRead", "()[B");
+        android_LGW_onRead = env->GetMethodID(loggerClass, "onRead", "(I)[B");
         android_LGW_onWrite = env->GetMethodID(loggerClass, "onWrite", "([B)I");
         android_LGW_onSetAttr = env->GetMethodID(loggerClass, "onSetAttr", "(Z)I");
 
@@ -320,11 +320,9 @@ static void run(
        << memSetupMemGatewaySettingsStorage[regionIdx].name << std::endl;
     listener->eventProcessor->onInfo(listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
 
-    append2logfile("==== Start listening ====");
     listener->eventProcessor->onInfo(listener, LOG_INFO, LOG_MAIN_FUNC, 0, "Start listen");
     int r = listener->listen(&gwSettings);
     listener->eventProcessor->onInfo(listener, LOG_INFO, LOG_MAIN_FUNC, 0, "Stop listen");
-    append2logfile("==== Stop listening ====");
 
     if (r && listener->eventProcessor) {
         std::stringstream ss;
@@ -383,13 +381,9 @@ extern "C" JNIEXPORT jint JNICALL Java_com_commandus_lgw_LGW_start(
     jint verbosity
 )
 {
-    append2logfile("==== LGW.start <====");
     std::string id = jstring2string(env, gwIdString);
-    append2logfile(id.c_str());
     uint64_t gwId = std::stoull(id.c_str(), 0, 16);
-    append2logfile("Thread");
     gwThread = new std::thread(run, gwId, regionIdx, verbosity);
-    append2logfile("==== LGW.start >====");
     return 0;
 }
 
@@ -435,7 +429,11 @@ Java_com_commandus_lgw_LGW_regionNames(
     return result;
 }
 
-extern "C" ssize_t read_c(int fd, void *buf, size_t count)
+extern "C" ssize_t read_c(
+    int fd,
+    void *buf,
+    size_t count
+)
 {
     if (!loggerObject || !android_LGW_onRead)
         return -1;
@@ -445,10 +443,8 @@ extern "C" ssize_t read_c(int fd, void *buf, size_t count)
     if (!jEnv || !loggerObject)
         return -1;
 
-    jbyteArray jb = jEnv->NewByteArray(count);
-    if (!jb)
-        return -1;
-    jbyteArray a = static_cast<jbyteArray>(jEnv->CallObjectMethod(loggerObject, android_LGW_onRead));
+    jint jCount = count;
+    jbyteArray a = static_cast<jbyteArray>(jEnv->CallObjectMethod(loggerObject, android_LGW_onRead, jCount));
     if (!a)
         return -1;
 
@@ -458,22 +454,17 @@ extern "C" ssize_t read_c(int fd, void *buf, size_t count)
     for (int i = 0; i < len; ++i ) {
         *((char *) buf + i) = ae[i];
     }
-    std::stringstream ss;
-    ss << "==== Read " << (int) len << " bytes: "
-        << hexString(buf, len);
-    append2logfile(ss.str().c_str());
-
     if (requireDetach)
         jVM->DetachCurrentThread();
     return len;
 }
 
-extern "C" ssize_t write_c(int fd, const void *buf, size_t count)
+extern "C" ssize_t write_c(
+    int fd,
+    const void *buf,
+    size_t count
+)
 {
-
-    std::stringstream ss;
-    ss << "Write " << count << " bytes: " << hexString(buf, count);
-    append2logfile(ss.str().c_str());
     if (!loggerObject || !android_LGW_onWrite)
         return -1;
 
@@ -485,9 +476,9 @@ extern "C" ssize_t write_c(int fd, const void *buf, size_t count)
     if (!jb)
         return -1;
     jEnv->SetByteArrayRegion(jb, 0, count, (jbyte*) buf);
-    ss << "Writing " << count << " bytes: " << hexString(buf, count);
+
     int r = jEnv->CallIntMethod(loggerObject, android_LGW_onWrite, jb);
-    ss << "Wrote " << count << " bytes: " << hexString(buf, count);
+
     if (requireDetach)
         jVM->DetachCurrentThread();
 
@@ -508,7 +499,6 @@ extern "C" int tcgetattr_c(
         for (int i = 0; i < NCCS; i++) {
             retval->c_cc[i] = 0;    // special characters
         }
-
     }
     return 0;
 }
@@ -530,15 +520,8 @@ extern "C" int tcsetattr_c(
         return -1;
 
     // blocking mode
-    jboolean jBlocking = termios_p->c_cc[VMIN] != 0;
-
-    std::stringstream ss;
-    if (jBlocking)
-        append2logfile("Set blocking on");
-    else
-        append2logfile("Set blocking off");
-
-    int r = jEnv->CallIntMethod(loggerObject, android_LGW_onSetAttr, jBlocking);
+    jboolean blocking = termios_p->c_cc[VMIN] != 0;
+    int r = jEnv->CallIntMethod(loggerObject, android_LGW_onSetAttr, blocking);
 
     if (requireDetach)
         jVM->DetachCurrentThread();

@@ -15,9 +15,11 @@ import androidx.annotation.Nullable;
 import com.commandus.ftdi.FTDI;
 import com.commandus.ftdi.SerialErrorListener;
 import com.commandus.ftdi.SerialSocket;
+import com.hoho.android.usbserial.driver.UsbSerialPort;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Date;
 
 /**
@@ -194,14 +196,15 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
     }
 
     @Override
-    public byte[] onRead() {
+    public byte[] onRead(int bytes) {
         if (usbSerialSocket != null) {
-            byte[] r = usbSerialSocket.read();
+            byte[] r = usbSerialSocket.read(bytes);
+            // onInfo("Read " + r.length + " bytes: " + LgwHelper.bytesToHex(r) + ", buffer size: " + Integer.toString(bytes));
             if (listener != null) {
                 synchronized (this) {
                     mainLooper.post(() -> {
                         if (listener != null) {
-                            listener.onRead();
+                            listener.onRead(bytes);
                         }
                     });
                 }
@@ -213,7 +216,7 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
 
     @Override
     public int onWrite(byte[] data) {
-        onInfo("Write " + data.length + " bytes");
+        // onInfo("Write " + data.length + " bytes: " + LgwHelper.bytesToHex(data));
         if (usbSerialSocket == null)
             return -1; // error
         int r = usbSerialSocket.write(data);
@@ -230,9 +233,10 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
     }
 
     @Override
-    public int onSetAttr(boolean blocking) {
+    public int onSetAttr(
+        boolean blocking
+    ) {
         usbSerialSocket.setBlocking(blocking);
-        onInfo("Set blocking mode " + blocking);
         return 0;
     }
 

@@ -270,7 +270,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public byte[] onRead() {
+    public byte[] onRead(int bytes) {
         incReads();
         return new byte[0];
     }

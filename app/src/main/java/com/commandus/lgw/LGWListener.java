@@ -7,7 +7,9 @@ public interface LGWListener {
     void onDisconnected();
     void onStarted(String gatewayId, String regionName, int regionIndex);
     void onFinished(String message);
-    byte[] onRead();
+    byte[] onRead(int bytes);
     int onWrite(byte[] data);
-    int onSetAttr(boolean blocking);
+    int onSetAttr(
+        boolean blocking
+    );
 }

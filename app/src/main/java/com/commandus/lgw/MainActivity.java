@@ -14,7 +14,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.util.Log;
-import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
@@ -24,8 +23,8 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.commandus.ftdi.FTDI;
 import com.commandus.lgw.databinding.ActivityMainBinding;
+import com.commandus.serial.SerialPort;
 
 public class MainActivity extends AppCompatActivity
     implements ServiceConnection, LGWListener, RegionDialog.RegionSelectListener
@@ -40,29 +39,20 @@ public class MainActivity extends AppCompatActivity
     private int SOUND_ON;
     private int SOUND_SHOT;
 
-    private int mReadCount;
-    private int mWriteCount;
-
     private SoundPool soundPool;
     private LGWService service;
     private LgwSettings lgwSettings;
     private BroadcastReceiver broadcastReceiver;
     private PayloadAdapter payloadAdapter;
-    private DeviceAddresses deviceAddresses;
 
     private Button buttonRegion;
     private SwitchCompat switchGateway;
     private TextView textStatusUSB;
-    private TextView textCountRead;
-    private TextView textCountWrite;
-    private Button buttonDevices;
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
         service = ((LGWService.LGWServiceBinder) binder).getService();
         service.attach(this);
-        mReadCount = 0;
-        mWriteCount = 0;
 
         runOnUiThread(() -> {
             updateUiRegion();
@@ -74,9 +64,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onServiceDisconnected(ComponentName name) {
         service = null;
-        runOnUiThread(() -> {
-            onDisconnected();
-        });
+        runOnUiThread(this::onDisconnected);
     }
 
     @Override
@@ -92,6 +80,7 @@ public class MainActivity extends AppCompatActivity
             .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build();
+        /*
         soundPool = new SoundPool.Builder()
             .setAudioAttributes(attributes)
             .setMaxStreams(5)
@@ -103,30 +92,28 @@ public class MainActivity extends AppCompatActivity
         SOUND_OFF = soundPool.load(this, R.raw.off, SOUND_PRIORITY_1);
         SOUND_ON = soundPool.load(this, R.raw.on, SOUND_PRIORITY_1);
         SOUND_SHOT = soundPool.load(this, R.raw.shot, SOUND_PRIORITY_1);
+         */
 
         buttonRegion = binding.buttonRegion;
-        buttonDevices = binding.buttonDevices;
+        Button buttonDevices = binding.buttonDevices;
         switchGateway = binding.switchGateway;
         textStatusUSB = binding.textStatusUSB;
-        textCountRead = binding.textLGWReadCount;
-        textCountWrite = binding.textLGWWriteCount;
+        // TextView textCountRead = binding.textLGWReadCount;
+        // TextView textCountWrite = binding.textLGWWriteCount;
 
         // TextView textStatusLGW = binding.textStatusLGW;
         RecyclerView recyclerViewLog = binding.recyclerViewLog;
 
-        deviceAddresses = new DeviceAddresses();
-        int cnt = 0;
+        DeviceAddresses deviceAddresses = new DeviceAddresses();
+        int cnt = DeviceAddressProvider.count(this);
         if (cnt > 0)
             buttonDevices.setText(getString(R.string.label_button_device_count) + cnt);
         else
             buttonDevices.setText(R.string.label_button_devices);
 
-        buttonDevices.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, DevicesActivity.class);
-                startActivity(intent);
-            }
+        buttonDevices.setOnClickListener(view -> {
+            Intent intent = new Intent(MainActivity.this, DevicesActivity.class);
+            startActivity(intent);
         });
 
         switchGateway.setOnClickListener(view -> {
@@ -185,13 +172,12 @@ public class MainActivity extends AppCompatActivity
         }
 
         if (!isUSBConnected()) {
-            onInfo("startLGW: no USB connection");
-            if (FTDI.hasDevice(MainActivity.this)) {
+            if (SerialPort.hasDevice(MainActivity.this)) {
                 connectUSB();
             }
         }
         if (!isUSBConnected()) {
-            onInfo("startLGW: no USB connection established");
+            onInfo(getString(R.string.message_no_usb_connection_established));
             return false;
         }
 
@@ -242,14 +228,14 @@ public class MainActivity extends AppCompatActivity
             }
         }
         if (ACTION_USB_ATTACHED.equals(action)) {
-            if (FTDI.hasDevice(this)) {
+            if (SerialPort.hasDevice(this)) {
                 onInfo("USB device attached");
-                soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
+                // soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
                 connectUSB();
             }
         }
         if (ACTION_USB_DETACHED.equals(action)) {
-            soundPool.play(SOUND_OFF, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
+            // soundPool.play(SOUND_OFF, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
             onInfo("USB device detached");
             disconnectUSB();
         }
@@ -266,24 +252,7 @@ public class MainActivity extends AppCompatActivity
         switchGateway.setChecked(false);
         switchGateway.setText(R.string.gateway_off);
         payloadAdapter.push("Finished " + message);
-        soundPool.play(SOUND_BEEP, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
-    }
-
-    @Override
-    public byte[] onRead(int bytes) {
-        incReads();
-        return new byte[0];
-    }
-
-    @Override
-    public int onWrite(byte[] data) {
-        incWrites();
-        return 0;
-    }
-
-    @Override
-    public int onSetAttr(boolean blocking) {
-        return 0;
+        // soundPool.play(SOUND_BEEP, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
     }
 
     @Override
@@ -306,7 +275,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onDisconnected() {
         setUIUSBConnected(false);
-        soundPool.play(SOUND_ALARM, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
+        // soundPool.play(SOUND_ALARM, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
     }
 
     private void disconnectUSB() {
@@ -321,7 +290,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void connectUSB() {
-        onInfo("Connecting..");
         if (service == null) {
             onInfo("No service");
             setUIUSBConnected(false);
@@ -332,19 +300,16 @@ public class MainActivity extends AppCompatActivity
             setUIUSBConnected(true);
             return;
         }
-        if (FTDI.hasDevice(this)) {
+        if (SerialPort.hasDevice(this)) {
             if (!service.connectSerialPort()) // permission not granted
                 return;
         } else {
             onInfo("Unknown USB device");
         }
         setUIUSBConnected(service.connected);
-        if (service.connected)
-            soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
-        if (service.connected)
-            onInfo("Successfully connected");
-        else
-            onInfo("Not connected");
+        if (service.connected) {
+            // soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
+        }
     }
 
     private void setUIUSBConnected(boolean connected) {
@@ -369,21 +334,10 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onSetRegionIndex(int selection) {
         if (lgwSettings.getRegionIndex() != selection) {
-            soundPool.play(SOUND_SHOT, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
+            // soundPool.play(SOUND_SHOT, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
             lgwSettings.setRegionIndex(selection);
             lgwSettings.save();
         }
         updateUiRegion();
     }
-
-    private void incReads() {
-        mReadCount++;
-        textCountRead.setText(Integer.toString(mReadCount));
-    }
-
-    private void incWrites() {
-        mWriteCount++;
-        textCountWrite.setText(Integer.toString(mWriteCount));
-    }
-
 }

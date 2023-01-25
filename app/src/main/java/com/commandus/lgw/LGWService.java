@@ -12,20 +12,19 @@ import android.provider.Settings;
 
 import androidx.annotation.Nullable;
 
-import com.commandus.ftdi.FTDI;
-import com.commandus.ftdi.SerialErrorListener;
-import com.commandus.ftdi.SerialSocket;
-import com.hoho.android.usbserial.driver.UsbSerialPort;
+import com.commandus.serial.SerialPort;
+import com.commandus.serial.SerialErrorListener;
+import com.commandus.serial.SerialSocket;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.Date;
 
 /**
  * create notification and queue serial data while activity is not in the foreground
  */
-public class LGWService extends Service implements LGWListener, SerialErrorListener {
+public class LGWService extends Service implements
+        LGWListener, SerialIO, SerialErrorListener {
 
     private SerialSocket usbSerialSocket;
     /**
@@ -59,6 +58,7 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
     private final Handler mainLooper;
     private final IBinder binder;
     private LGWListener listener;
+    private SerialIO serialIO;
 
     public LGW lgw;
     public boolean connected;
@@ -90,9 +90,9 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
      * */
     public boolean connectSerialPort() {
         onInfo("Connecting USB serial port..");
-        usbSerialSocket = FTDI.open(this);
+        usbSerialSocket = SerialPort.open(this);
         if (usbSerialSocket == null) {
-            onInfo("Error open serial port: " + FTDI.reason);
+            onInfo("Error open serial port: " + SerialPort.reason);
             return false;
         }
         connected = usbSerialSocket.connect(this);
@@ -105,7 +105,7 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
         connected = false; // ignore data,errors while disconnecting
         cancelNotification();
         if (usbSerialSocket != null) {
-            FTDI.close(usbSerialSocket);
+            SerialPort.close(usbSerialSocket);
             usbSerialSocket = null;
         }
         onDisconnected();
@@ -200,15 +200,6 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
         if (usbSerialSocket != null) {
             byte[] r = usbSerialSocket.read(bytes);
             // onInfo("Read " + r.length + " bytes: " + LgwHelper.bytesToHex(r) + ", buffer size: " + Integer.toString(bytes));
-            if (listener != null) {
-                synchronized (this) {
-                    mainLooper.post(() -> {
-                        if (listener != null) {
-                            listener.onRead(bytes);
-                        }
-                    });
-                }
-            }
             return r;
         }
         return new byte[0];
@@ -220,15 +211,6 @@ public class LGWService extends Service implements LGWListener, SerialErrorListe
         if (usbSerialSocket == null)
             return -1; // error
         int r = usbSerialSocket.write(data);
-        if (listener != null) {
-            synchronized (this) {
-                mainLooper.post(() -> {
-                    if (listener != null) {
-                        listener.onWrite(data);
-                    }
-                });
-            }
-        }
         return r;
     }
 

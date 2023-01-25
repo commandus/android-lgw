@@ -27,4 +27,5 @@
     <string name="label_stopped">Stopped</string>
     <string name="label_region">Region</string>
     <string name="label_zero">0</string>
+    <string name="message_no_usb_connection_established">No USB connection established</string>
 </resources>

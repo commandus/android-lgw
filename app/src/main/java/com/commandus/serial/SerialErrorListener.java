@@ -1,4 +1,4 @@
-package com.commandus.ftdi;
+package com.commandus.serial;
 
 public interface SerialErrorListener {
     void onDisconnect();

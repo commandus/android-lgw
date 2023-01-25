@@ -15,9 +15,9 @@ import android.text.TextUtils;
 import java.util.HashMap;
 
 public class DeviceAddressProvider extends ContentProvider {
-    static final String PROVIDER_NAME = "device.lora";
+    static final String PROVIDER_NAME = "lora.abp";
     // content URI
-    static final String URL = "content://" + PROVIDER_NAME + "/abp";
+    static final String URL = "content://" + PROVIDER_NAME;
     // parsing the content URI
     static final Uri CONTENT_URI = Uri.parse(URL);
 
@@ -190,8 +190,10 @@ public class DeviceAddressProvider extends ContentProvider {
         return count;
     }
 
-    public int count() {
-        Cursor mCount= db.rawQuery("SELECT count(*) FROM " + TABLE_NAME, null);
+    public static int count(Context context) {
+        DatabaseHelper dbHelper = new DatabaseHelper(context);
+        SQLiteDatabase dbCount = dbHelper.getWritableDatabase();
+        Cursor mCount= dbCount.rawQuery("SELECT count(*) FROM " + TABLE_NAME, null);
         mCount.moveToFirst();
         int r =  mCount.getInt(0);
         mCount.close();

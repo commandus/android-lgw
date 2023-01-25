@@ -1,4 +1,4 @@
-package com.commandus.ftdi;
+package com.commandus.serial;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.InvalidParameterException;
 
-import com.commandus.lgw.LgwHelper;
 import com.commandus.lgw.LgwSettings;
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 
@@ -25,7 +24,7 @@ public class SerialSocket {
     public UsbSerialPort serialPort;
 
     private int readWriteTimeout = 100; // ms
-    private ByteBuffer mReadBuffer;
+    private final ByteBuffer mReadBuffer;
     private int mCountReadBuffer;
     private int mPositionReadBuffer;
     private final Object mReadBufferLock = new Object();
@@ -48,8 +47,7 @@ public class SerialSocket {
             readIntoBuffer(timeoutMs);
             getFromBuffer(baos, remaining);
         }
-        byte[] r = baos.toByteArray();
-        return r;
+        return baos.toByteArray();
     }
 
     private int getFromBuffer(ByteArrayOutputStream os, int count) {

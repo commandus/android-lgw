@@ -1,5 +1,5 @@
-#ifndef LGW_EVENT_INTF_H_
-#define LGW_EVENT_INTF_H_	1
+#ifndef LOG_INTF_H_
+#define LOG_INTF_H_	1
 
 class Payload {
     time_t received;
@@ -11,14 +11,14 @@ class Payload {
     float lsnr;
 };
 
-class LGWEventIntf {
+class LogIntf {
 public:
     virtual void onInfo(
-        void *env,
-        int level,
-        int moduleCode,
-        int errorCode,
-        const std::string &message
+            void *env,
+            int level,
+            int moduleCode,
+            int errorCode,
+            const std::string &message
     ) = 0;
     virtual void onConnected(bool connected) = 0;
     virtual void onDisconnected() = 0;

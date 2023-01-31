@@ -8,9 +8,15 @@
 #include "utillora.h"
 #include "gateway-settings.h"
 #include "packet-listener.h"
-#include "lgw-event-intf.h"
+#include "log-intf.h"
 
 #define MEASUREMENT_COUNT_SIZE 23
+
+// listen() flags parameter values
+// 1- Do not send messages
+#define FLAG_GATEWAY_LISTENER_NO_SEND   1
+// 2- Do not send beacons
+#define FLAG_GATEWAY_LISTENER_NO_BEACON 2
 
 typedef enum {
     meas_nb_rx_rcv,             ///< count packets received
@@ -95,7 +101,7 @@ private:
         bool gracefullyStopped
     )> onStop;
 
-    LGWEventIntf *onLog;
+    LogIntf *onLog;
 
     // thread control
     bool stopRequest;               ///< set to true to stop all threads
@@ -144,6 +150,7 @@ public:
     PacketListener *packetListener;
     int lastLgwCode;
     GatewaySettings *config;
+    int flags;
     GatewayMeasurements measurements;
 
     int fdGpsTty;        ///< file descriptor of the GPS TTY port
@@ -178,7 +185,7 @@ public:
             const uint16_t results[LGW_SPECTRAL_SCAN_RESULT_SIZE]
         )> value
     );
-    void setOnLog(LGWEventIntf *value);
+    void setOnLog(LogIntf *value);
     void setOnUpstream(
         std::function<void(
             const LoraGatewayListener *listener,

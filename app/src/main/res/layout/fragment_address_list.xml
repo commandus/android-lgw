@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".AddressListFragment">
+    tools:context="com.commandus.gui.AddressListFragment">
 
     <TextView
         android:id="@+id/textview_device_address_list_status"

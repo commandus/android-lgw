@@ -1,17 +1,15 @@
-package com.commandus.lgw;
+package com.commandus.gui;
 
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import android.view.View;
-
 import androidx.appcompat.widget.Toolbar;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
+import com.commandus.lgw.R;
 import com.commandus.lgw.databinding.ActivityDevicesBinding;
 
 public class DevicesActivity extends AppCompatActivity {

@@ -53,11 +53,11 @@ public class SerialPort {
         if (!manager.hasPermission(d)) {
             int flags;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                flags = PendingIntent.FLAG_IMMUTABLE;
+                flags = PendingIntent.FLAG_MUTABLE;
             else
                 flags = 0;
-            PendingIntent usbPermissionIntent = PendingIntent.getBroadcast(context, 0, new Intent(LgwSettings.INTENT_ACTION_GRANT_USB),
-                    flags);
+            PendingIntent usbPermissionIntent = PendingIntent.getBroadcast(context, 0,
+                    new Intent(LgwSettings.INTENT_ACTION_GRANT_USB), flags);
             manager.requestPermission(d, usbPermissionIntent);
             reason = "UDB device access denied";
             return null;

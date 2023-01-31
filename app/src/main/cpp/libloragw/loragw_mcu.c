@@ -268,20 +268,17 @@ int read_ack(int fd, uint8_t * hdr, uint8_t * buf, size_t buf_size) {
     /* Read message header first, handle EINTR as it is a blocking call */
     do {
         n = read_c(fd, &hdr[0], (size_t)HEADER_CMD_SIZE);
-        DEBUG_PRINTF("INFO: read %d bytes for header from gateway\n", n);
     } while (n == -1 && errno == EINTR);
 
     if (n == -1) {
         perror("ERROR: Unable to read /dev/ttyACMx - ");
         return -1;
     } else {
-        DEBUG_PRINTF("INFO: finally read %d bytes for header from gateway\n", n);
+        DEBUG_PRINTF("INFO: read %d bytes for header from gateway\n", n);
     }
 
     /* Compute time spent in this function */
     _meas_time_stop(5, tm, "read_ack(hdr)");
-
-    DEBUG_PRINTF("INFO: read_ack _meas_time_stop %d", 0);
 
 #if DEBUG_VERBOSE
     printf("read_ack(hdr):");
@@ -292,18 +289,15 @@ int read_ack(int fd, uint8_t * hdr, uint8_t * buf, size_t buf_size) {
     printf("\n");
 #endif
 
-    DEBUG_PRINTF("INFO: read_ack _meas_time_start %d", 0);
     /* Record function start time */
     _meas_time_start(&tm);
 
-    DEBUG_PRINTF("INFO: Check if the command id is valid, command 0x%x", cmd_get_type(hdr));
     /* Check if the command id is valid */
     if ((cmd_get_type(hdr) < 0x40) || (cmd_get_type(hdr) > 0x46)) {
         printf("ERROR: received wrong ACK type (0x%02X)\n", cmd_get_type(hdr));
         return -1;
     }
 
-    DEBUG_PRINTF("INFO: Get remaining payload size (metadata + pkt payload) = %d", cmd_get_size(hdr));
     /* Get remaining payload size (metadata + pkt payload) */
     size = (size_t)cmd_get_size(hdr);
     if (size > buf_size) {
@@ -311,15 +305,12 @@ int read_ack(int fd, uint8_t * hdr, uint8_t * buf, size_t buf_size) {
         return -1;
     }
 
-    DEBUG_PRINTF("INFO: Read payload if any, payload size: %d", size);
     /* Read payload if any */
     if (size > 0) {
         do {
             /* handle EINTR as it is a blocking call */
             do {
-                DEBUG_PRINTF("INFO: read_c, buffer size: %d", nb_read);
                 n = read_c(fd, &buf[nb_read], size - nb_read);
-                DEBUG_PRINTF("INFO: read_c, bytes: %d", n);
             } while (n == -1 && errno == EINTR);
 
             if (n == -1) {
@@ -340,11 +331,10 @@ int read_ack(int fd, uint8_t * hdr, uint8_t * buf, size_t buf_size) {
         printf("\n");
 #endif
     }
-    DEBUG_PRINTF("INFO: _meas_time_stop %d", 0);
 
     /* Compute time spent in this function */
     _meas_time_stop(5, tm, "read_ack(payload)");
-    DEBUG_PRINTF("INFO: read_ack read %d bytes", nb_read);
+
     return nb_read;
 }
 
@@ -561,26 +551,23 @@ int decode_ack_spi_bulk(const uint8_t * hdr, const uint8_t * payload) {
 
 int mcu_ping(int fd, s_ping_info * info) {
     uint8_t buf_ack[ACK_PING_SIZE];
-    printf_c("INFO: mcu_ping ACK_PING_SIZE = %d\n", ACK_PING_SIZE);
+
     CHECK_NULL(info);
 
-    printf_c("INFO: mcu_ping write PING request = %d\n", 0);
     if (write_req(fd, ORDER_ID__REQ_PING, NULL, 0) != 0) {
         printf("ERROR: failed to write PING request\n");
         return -1;
     }
 
-    printf_c("INFO: read_ack  = %d\n", ACK_PING_SIZE);
     if (read_ack(fd, buf_hdr, buf_ack, sizeof buf_ack) < 0) {
         printf("ERROR: failed to read PING ack\n");
         return -1;
     }
-    printf_c("INFO: decode_ack_ping  = %d\n", ACK_PING_SIZE);
+
     if (decode_ack_ping(buf_hdr, buf_ack, info) != 0) {
         printf("ERROR: invalid PING ack\n");
         return -1;
     }
-    printf_c("INFO: mcu_ping finish = %d\n", ACK_PING_SIZE);
 
     return 0;
 }

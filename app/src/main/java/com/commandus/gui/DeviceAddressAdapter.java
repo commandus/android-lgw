@@ -1,4 +1,4 @@
-package com.commandus.lgw;
+package com.commandus.gui;
 
 import android.database.Cursor;
 import android.view.LayoutInflater;
@@ -8,6 +8,9 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.commandus.lgw.AddressSelection;
+import com.commandus.lgw.R;
 
 public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdapter.ViewHolder> {
 
@@ -39,7 +42,7 @@ public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdap
         recyclerView = rv;
         mAddressSelection = addressSelection;
         mCursor = recyclerView.getContext().getContentResolver().query(
-            DeviceAddressProvider.CONTENT_URI, DeviceAddressProvider.PROJECTION, null, null, null);
+                DeviceAddressProvider.CONTENT_URI, DeviceAddressProvider.PROJECTION, null, null, null);
     }
 
     @NonNull

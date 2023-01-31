@@ -15,6 +15,11 @@
 #define XERR_INIT_AVG       16          // number of measurements the XTAL correction is averaged on as initial value
 #define XERR_FILT_COEF      256         // coefficient for low-pass XTAL error tracking
 
+#define SPECTRAL_SCAN_CHECK_STATUS_DELAY_MS   10
+#define JIT_DELAY               10
+#define SPECTRAL_SCAN_DELAY_MS  1000
+#define GPS_DELAY_MS            1000
+
 const char *MEASUREMENT_NAME[MEASUREMENT_COUNT_SIZE] = {
     "Received",
     "CRC OK",
@@ -235,7 +240,6 @@ void LoraGatewayListener::spectralScanRunner()
 {
     if (!config)
         return;
-    spectralScanThreadRunning = true;
     log(LOG_DEBUG, LOG_EMBEDDED_GATEWAY, MSG_SPECTRAL_SCAN_STARTED);
 
     uint32_t freqHz = config->sx1261()->spectralScan.freq_hz_start;
@@ -252,7 +256,7 @@ void LoraGatewayListener::spectralScanRunner()
         for (int i = 0; i < (int)(config->sx1261()->spectralScan.pace_s ? config->sx1261()->spectralScan.pace_s : 1); i++) {
             if (stopRequest)
                 break;
-            wait_ms(1000);
+            wait_ms(SPECTRAL_SCAN_DELAY_MS);
         }
         spectralScanStarted = false;
 
@@ -306,7 +310,7 @@ void LoraGatewayListener::spectralScanRunner()
                 }
 
                 // wait a bit before checking status again
-                wait_ms(10);
+                wait_ms(SPECTRAL_SCAN_CHECK_STATUS_DELAY_MS);
             } while (status != LGW_SPECTRAL_SCAN_STATUS_COMPLETED && status != LGW_SPECTRAL_SCAN_STATUS_ABORTED);
             if (status == LGW_SPECTRAL_SCAN_STATUS_COMPLETED) {
                 // Get spectral scan results
@@ -346,7 +350,6 @@ void LoraGatewayListener::spectralScanRunner()
 
 void LoraGatewayListener::gpsRunner()
 {
-    gpsThreadRunning = true;
     log(LOG_DEBUG, LOG_EMBEDDED_GATEWAY, MSG_GPS_STARTED);
     char serial_buff[128]; // buffer to receive GPS data
     memset(serial_buff, 0, sizeof serial_buff);
@@ -433,7 +436,6 @@ void LoraGatewayListener::gpsRunner()
  * Check time reference and calculate XTAL correction
  */
 void LoraGatewayListener::gpsCheckTimeRunner() {
-    gpsCheckTimeThreadRunning = true;
     log(LOG_DEBUG, LOG_EMBEDDED_GATEWAY, MSG_CHECK_TIME_STARTED);
 
     // GPS reference validation variables
@@ -447,7 +449,7 @@ void LoraGatewayListener::gpsCheckTimeRunner() {
     double x;
 
     while (!stopRequest) {
-        wait_ms(1000);
+        wait_ms(GPS_DELAY_MS);
         // calculate when the time reference was last updated
         mutexGPSTimeReference.lock();
         gps_ref_age = (long)difftime(time(nullptr), gpsTimeReference.systime);
@@ -502,7 +504,7 @@ void LoraGatewayListener::gpsCheckTimeRunner() {
 #define NB_PKT_MAX         255
 #define TX_BUFF_SIZE       ((540 * NB_PKT_MAX) + 30 + STATUS_SIZE)
 // ms waited when a fetch return no packets
-#define FETCH_SLEEP_MS     10
+#define UPSTREAM_FETCH_DELAY_MS     10
 #define GATEWAY_PROTOCOL    2
 #define UNIX_GPS_EPOCH_OFFSET 315964800 // Number of seconds ellapsed between 01.Jan.1970 00:00:00 and 06.Jan.1980 00:00:00
 
@@ -516,7 +518,6 @@ void LoraGatewayListener::upstreamRunner()
 
     metadata.gatewayId = config->gateway()->gatewayId;
 
-    upstreamThreadRunning = true;
     log(LOG_DEBUG, LOG_EMBEDDED_GATEWAY, MSG_UPSTREAM_STARTED);
 
     // allocate memory for metadata fetching and processing
@@ -543,7 +544,7 @@ void LoraGatewayListener::upstreamRunner()
 
         // wait a short time if no packets, nor status report
         if (nb_pkt == 0) {
-            wait_ms(FETCH_SLEEP_MS);
+            wait_ms(UPSTREAM_FETCH_DELAY_MS);
             continue;
         }
 
@@ -984,7 +985,6 @@ void LoraGatewayListener::downstreamBeaconRunner() {
         return;
     }
     log(LOG_DEBUG, LOG_EMBEDDED_GATEWAY, MSG_BEACON_DOWNSTREAM_STARTED);
-    downstreamBeaconThreadRunning = true;
     // beacon variables
     struct lgw_pkt_tx_s beacon_pkt;
     uint8_t beacon_chan;
@@ -1215,7 +1215,6 @@ void LoraGatewayListener::downstreamBeaconRunner() {
  * Transmit packets from JIT queue
  **/
 void LoraGatewayListener::jitRunner() {
-    jitThreadRunning = true;
     log(LOG_DEBUG, LOG_EMBEDDED_GATEWAY, MSG_JIT_QUEUE_STARTED);
     int result = LGW_HAL_SUCCESS;
     struct lgw_pkt_tx_s pkt;
@@ -1226,7 +1225,7 @@ void LoraGatewayListener::jitRunner() {
     uint8_t tx_status;
 
     while (!stopRequest) {
-        wait_ms(10);
+        wait_ms(JIT_DELAY);
         for (int i = 0; i < LGW_RF_CHAIN_NB; i++) {
             // transfer data and metadata to the concentrator, and schedule TX
             mLGW.lock();
@@ -1313,12 +1312,12 @@ void LoraGatewayListener::jitRunner() {
     jitThreadRunning = false;
     log(LOG_DEBUG, LOG_EMBEDDED_GATEWAY, MSG_JIT_QUEUE_FINISHED);
 }
+
 LoraGatewayListener::LoraGatewayListener()
     : logVerbosity(0), onUpstream(nullptr), onSpectralScan(nullptr), onLog(nullptr), stopRequest(false),
       upstreamThreadRunning(false), downstreamBeaconThreadRunning(false), jitThreadRunning(false),
       gpsThreadRunning(false), gpsCheckTimeThreadRunning(false), spectralScanThreadRunning(false),
-      gps_ref_valid(false),
-      lastLgwCode(0), config(nullptr), fdGpsTty(-1), eui(0),
+      gps_ref_valid(false), lastLgwCode(0), config(nullptr), flags(0), fdGpsTty(-1), eui(0),
       gpsCoordsLastSynced(0), gpsTimeLastSynced(0), gpsEnabled(false),
       xtal_correct_ok(false), xtal_correct(1.0),
       packetListener(nullptr)
@@ -1447,36 +1446,49 @@ int LoraGatewayListener::start()
         return ERR_CODE_LORA_GATEWAY_GET_EUI;
 
     if (!upstreamThreadRunning) {
+        // set indicator on in the main thread (thread may run after isStopped() call)
+        upstreamThreadRunning = true;
         std::thread upstreamThread(&LoraGatewayListener::upstreamRunner, this);
         setThreadName(&upstreamThread, MODULE_NAME_GW_UPSTREAM);
         upstreamThread.detach();
     }
-    if (!downstreamBeaconThreadRunning) {
-        std::thread downstreamBeaconThread(&LoraGatewayListener::downstreamBeaconRunner, this);
-        setThreadName(&downstreamBeaconThread, MODULE_NAME_GW_DOWNSTREAM);
-        downstreamBeaconThread.detach();
-    }
-    if (!jitThreadRunning) {
-        std::thread jitThread(&LoraGatewayListener::jitRunner, this);
-        setThreadName(&jitThread, MODULE_NAME_GW_JIT);
-        jitThread.detach();
-    }
+    if ((flags & FLAG_GATEWAY_LISTENER_NO_BEACON) == 0) {
+        if (!downstreamBeaconThreadRunning) {
+            downstreamBeaconThreadRunning = true;
+            std::thread downstreamBeaconThread(&LoraGatewayListener::downstreamBeaconRunner, this);
+            setThreadName(&downstreamBeaconThread, MODULE_NAME_GW_DOWNSTREAM);
+            downstreamBeaconThread.detach();
+        }
+    } else
+        downstreamBeaconThreadRunning = false;
+
+    if ((flags & FLAG_GATEWAY_LISTENER_NO_SEND) == 0) {
+        if (!jitThreadRunning) {
+            jitThreadRunning = true;
+            std::thread jitThread(&LoraGatewayListener::jitRunner, this);
+            setThreadName(&jitThread, MODULE_NAME_GW_JIT);
+            jitThread.detach();
+        }
+    } else
+        jitThreadRunning = false;
 
     if (config->sx1261()->spectralScan.enable) {
         if (!spectralScanThreadRunning) {
+            spectralScanThreadRunning = true;
             std::thread spectralScanThread(&LoraGatewayListener::spectralScanRunner, this);
             setThreadName(&spectralScanThread, MODULE_NAME_GW_SPECTRAL_SCAN);
             spectralScanThread.detach();
         }
     }
-
     if (gpsEnabled) {
         if (!gpsThreadRunning) {
+            gpsThreadRunning = true;
             std::thread gpsThread(&LoraGatewayListener::gpsRunner, this);
             setThreadName(&gpsThread, MODULE_NAME_GW_GPS);
             gpsThread.detach();
         }
         if (!gpsCheckTimeThreadRunning) {
+            gpsCheckTimeThreadRunning = true;
             std::thread gpsCheckTimeThread(&LoraGatewayListener::gpsCheckTimeRunner, this);
             setThreadName(&gpsCheckTimeThread, MODULE_NAME_GW_GPS_CHECK_TIME);
             gpsCheckTimeThread.detach();
@@ -1488,8 +1500,8 @@ int LoraGatewayListener::start()
 bool LoraGatewayListener::isRunning() const
 {
     return upstreamThreadRunning
-        && ((!gpsEnabled) || downstreamBeaconThreadRunning)
-        && jitThreadRunning
+        && ((flags & FLAG_GATEWAY_LISTENER_NO_BEACON) || (!gpsEnabled) || downstreamBeaconThreadRunning)
+        && ((flags & FLAG_GATEWAY_LISTENER_NO_SEND) || jitThreadRunning)
         && ((!gpsEnabled) || (gpsThreadRunning && gpsCheckTimeThreadRunning))
         && ((!config) || (!config->sx1261()->spectralScan.enable) || spectralScanThreadRunning);
 }
@@ -1562,7 +1574,7 @@ void LoraGatewayListener::setOnSpectralScan(
 }
 
 void LoraGatewayListener::setOnLog(
-        LGWEventIntf *value
+    LogIntf *value
 )
 {
     mLog.lock();

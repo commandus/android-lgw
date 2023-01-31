@@ -1,4 +1,4 @@
-package com.commandus.lgw;
+package com.commandus.gui;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,11 +8,13 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.commandus.lgw.R;
+
 import java.util.ArrayList;
 
 public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHolder> {
 
-    private final RecyclerView recyclerView;
+    private RecyclerView recyclerView;
     public ArrayList<String> logData;
 
     public void push(String item) {
@@ -20,8 +22,6 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
         if (logData.size() > 256)
             logData.remove(0);
         notifyDataSetChanged();
-        if (recyclerView != null)
-            recyclerView.smoothScrollToPosition(logData.size() - 1);
     }
 
     /**
@@ -44,8 +44,7 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
 
     // Create new views (invoked by the layout manager)
 
-    public PayloadAdapter(RecyclerView rv) {
-        recyclerView = rv;
+    public PayloadAdapter() {
         logData = new ArrayList<String>();
     }
 

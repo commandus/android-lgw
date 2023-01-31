@@ -31,7 +31,6 @@
 #define LOG_PLUGIN_MQTT                     11
 #define LOG_USB_ANDROID                     12
 
-
 // Module and thread names
 #define MODULE_NAME_RECEIVER_QUEUE_PROCESSOR        "RcvQue"
 #define MODULE_NAME_DEVICE_STAT_SVC_FILE            "DStatF"

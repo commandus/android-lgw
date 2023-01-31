@@ -41,6 +41,7 @@ set(LIBLORAGW_SRC
 
     qsort.c
     android-helper.cpp
+    libloragw-helper-android.cpp
 
     ulgw/usb-listener.cpp
     ulgw/packet-listener.cpp
@@ -60,8 +61,6 @@ set(LIBLORAGW_SRC
     ulgw/lora-encrypt.cpp
     ulgw/lorawan-mac.cpp
     ulgw/utilthread.cpp
-    ulgw/libloragw-helper.cpp
-
     ulgw/AndroidIdentityService.cpp
 
     base64/base64.cpp

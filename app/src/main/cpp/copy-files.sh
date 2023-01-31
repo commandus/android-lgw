@@ -12,6 +12,57 @@ JITQUEUE_INC_DIR=$RAK_2287/packet_forwarder/inc
 INC_DIR=$DST/packet_forwarder
 mkdir -p $INC_DIR
 
+LORAWAN_NETWORK_SERVER_DIR=~/src/lorawan-network-server
+DST_ULGW=$DST/ulgw
+mkdir -p $DST_ULGW
+
+cp $LORAWAN_NETWORK_SERVER_DIR/device-history-service-abstract.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/gateway-lora.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/identity-service.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/lora-encrypt.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/lora-radio.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/log-intf.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/packet-listener.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/usb-listener.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/utilstring.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/dev-addr.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/errlist.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/gateway-settings.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/lora-gateway-listener.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/lorawan-mac.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/platform.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/utildate.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/utilthread.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/device-history-item.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/gateway-list.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/gateway-stat.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/lora-packet-handler-abstract.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/net-id.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/udp-socket.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/utillora.h $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/libloragw-helper.h $DST_ULGW
+
+cp $LORAWAN_NETWORK_SERVER_DIR/errlist.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/gateway-stat.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/lorawan-mac.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/udp-socket.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/utillora.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/dev-addr.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/gateway-list.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/gateway_usb_conf.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/lora-encrypt.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/net-id.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/usb-listener.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/utilstring.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/device-history-item.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/gateway-settings.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/identity-service.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/lora-gateway-listener.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/packet-listener.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/utildate.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/utilthread.cpp $DST_ULGW
+cp $LORAWAN_NETWORK_SERVER_DIR/libloragw-helper.cpp $DST_ULGW
+
 cp $LIBLORAGW_INC_DIR/config.h $INC_DIR
 cp $LIBLORAGW_INC_DIR/loragw_aux.h $INC_DIR
 cp $LIBLORAGW_INC_DIR/loragw_debug.h $INC_DIR
@@ -91,10 +142,6 @@ cp $LIBTINYMT32_SRC_DIR/tinymt32.c $DST/libtinymt32
 cp $JITQUEUE_SRC_DIR/jitqueue.c $DST/jitqueue
 
 declare -a search_replace
-
-PRM='#define printf_c(fmt, args...) {char line[4096]; snprintf(line, sizeof(line), fmt, args); printf_c1("%s", line);}'
-echo $PRM
-
 
 search_replaces[0]='fprintf\(stdout, str\)|printf_c("%s", str)'
 search_replaces[1]='fprintf\(stderr, args\)|printf_c("%s", args)'

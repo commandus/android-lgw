@@ -1,4 +1,4 @@
-package com.commandus.lgw;
+package com.commandus.gui;
 
 import android.app.Dialog;
 import android.content.Context;
@@ -7,6 +7,8 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
+
+import com.commandus.lgw.R;
 
 public class RegionDialog extends DialogFragment {
     private final String[] mNames;

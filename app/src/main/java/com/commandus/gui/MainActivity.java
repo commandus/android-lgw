@@ -1,4 +1,4 @@
-package com.commandus.lgw;
+package com.commandus.gui;
 
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
@@ -23,6 +23,11 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.commandus.lgw.DeviceAddresses;
+import com.commandus.lgw.LGWListener;
+import com.commandus.lgw.LgwSettings;
+import com.commandus.lgw.Payload;
+import com.commandus.lgw.R;
 import com.commandus.lgw.databinding.ActivityMainBinding;
 import com.commandus.serial.SerialPort;
 
@@ -43,26 +48,33 @@ public class MainActivity extends AppCompatActivity
     private LGWService service;
     private LgwSettings lgwSettings;
     private BroadcastReceiver broadcastReceiver;
-    private PayloadAdapter payloadAdapter;
 
     private Button buttonRegion;
     private SwitchCompat switchGateway;
     private TextView textStatusUSB;
+    private TextView textStatusLGW;
+    private TextView textCountRead;
+    private RecyclerView recyclerViewLog;
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
         service = ((LGWService.LGWServiceBinder) binder).getService();
         service.attach(this);
+        recyclerViewLog.setAdapter(service.payloadAdapter);
 
         runOnUiThread(() -> {
             updateUiRegion();
             @SuppressLint("HardwareIds") String gwId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
             setTitle(getString(R.string.app_name) + " " + gwId);
+            // reflect does USB gateway connected already
+            reflectUSBConnected(service.connected);
+            reflectGatewayRunning(service.running);
         });
     }
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
+        recyclerViewLog.setAdapter(null);
         service = null;
         runOnUiThread(this::onDisconnected);
     }
@@ -98,11 +110,12 @@ public class MainActivity extends AppCompatActivity
         Button buttonDevices = binding.buttonDevices;
         switchGateway = binding.switchGateway;
         textStatusUSB = binding.textStatusUSB;
-        // TextView textCountRead = binding.textLGWReadCount;
+        textStatusLGW = binding.textStatusLGW;
+        textCountRead = binding.textLGWReadCount;
         // TextView textCountWrite = binding.textLGWWriteCount;
 
         // TextView textStatusLGW = binding.textStatusLGW;
-        RecyclerView recyclerViewLog = binding.recyclerViewLog;
+        recyclerViewLog = binding.recyclerViewLog;
 
         DeviceAddresses deviceAddresses = new DeviceAddresses();
         int cnt = DeviceAddressProvider.count(this);
@@ -119,17 +132,13 @@ public class MainActivity extends AppCompatActivity
         switchGateway.setOnClickListener(view -> {
             if (switchGateway.isChecked()) {
                 boolean r = startLGW();
-                switchGateway.setChecked(r);
-                switchGateway.setText(r ? R.string.gateway_on : R.string.gateway_off);
+                reflectGatewayRunning(r);
             } else {
                 stopLGW();
             }
         });
 
         buttonRegion.setOnClickListener(view -> selectRegion());
-
-        payloadAdapter = new PayloadAdapter(recyclerViewLog);
-        recyclerViewLog.setAdapter(payloadAdapter);
 
         broadcastReceiver = new BroadcastReceiver() {
             @Override
@@ -163,13 +172,12 @@ public class MainActivity extends AppCompatActivity
         if (service != null) {
             service.stopGateway();
         }
+        reflectGatewayRunning(false);
     }
 
     private boolean startLGW() {
-        if (service == null) {
-            onInfo("startLGW: no service");
+        if (service == null)
             return false;
-        }
 
         if (!isUSBConnected()) {
             if (SerialPort.hasDevice(MainActivity.this)) {
@@ -221,7 +229,7 @@ public class MainActivity extends AppCompatActivity
         if (LgwSettings.INTENT_ACTION_GRANT_USB.equals(action)) {
             boolean granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
             if (granted) {
-                onInfo("USB device access permission granted, reconnecting..");
+                onInfo("USB device access permission granted");
                 connectUSB();
             } else {
                 onInfo("USB device access permission denied, quit..");
@@ -241,47 +249,63 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    private void pushMessage(String msg) {
+        if (service == null)
+            return;
+        service.payloadAdapter.push(msg);
+        recyclerViewLog.smoothScrollToPosition(service.payloadAdapter.logData.size() - 1);
+    }
+
     @Override
     public void onStarted(String gatewayId, String regionName, int regionIndex) {
-        switchGateway.setText(R.string.gateway_on);
-        payloadAdapter.push("Started " + gatewayId + " " + regionName);
+        pushMessage(getString(R.string.label_running));
+        reflectGatewayRunning(true);
+    }
+
+    private void reflectGatewayRunning(boolean on) {
+        switchGateway.setChecked(on);
+        textStatusLGW.setText(on ? R.string.label_running : R.string.label_stopped);
+        switchGateway.setText(on ? R.string.gateway_on : R.string.gateway_off);
     }
 
     @Override
     public void onFinished(String message) {
-        switchGateway.setChecked(false);
-        switchGateway.setText(R.string.gateway_off);
-        payloadAdapter.push("Finished " + message);
+        pushMessage(getString(R.string.label_stopped));
+        reflectGatewayRunning(false);
+        pushMessage(getString(R.string.msg_finished) + message);
         // soundPool.play(SOUND_BEEP, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
     }
 
     @Override
     public void onValue(Payload value) {
-        payloadAdapter.push(value.hexPayload);
+        pushMessage(value.hexPayload);
+        textCountRead.setText(Integer.toString(service.valueCount));
     }
 
     @Override
     public void onInfo(String msg)
     {
         Log.d("main", msg);
-        payloadAdapter.push(msg);
+        pushMessage(msg);
     }
 
     @Override
     public void onConnected(boolean on) {
-        setUIUSBConnected(on);
+        pushMessage(getString(R.string.label_connected));
+        reflectUSBConnected(on);
     }
 
     @Override
     public void onDisconnected() {
-        setUIUSBConnected(false);
+        pushMessage(getString(R.string.label_disconnected));
+        reflectUSBConnected(false);
         // soundPool.play(SOUND_ALARM, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
     }
 
     private void disconnectUSB() {
         if (service != null)
             service.stopGateway();
-        setUIUSBConnected(false);
+        reflectUSBConnected(false);
     }
     private boolean isUSBConnected() {
         if (service == null)
@@ -291,41 +315,40 @@ public class MainActivity extends AppCompatActivity
 
     private void connectUSB() {
         if (service == null) {
-            onInfo("No service");
-            setUIUSBConnected(false);
+            onInfo(getString(R.string.msg_no_service));
+            reflectUSBConnected(false);
             return;
         }
         if (service.connected) {
-            onInfo("Already connected");
-            setUIUSBConnected(true);
+            onInfo(getString(R.string.msg_already_connected));
+            reflectUSBConnected(true);
             return;
         }
         if (SerialPort.hasDevice(this)) {
             if (!service.connectSerialPort()) // permission not granted
                 return;
         } else {
-            onInfo("Unknown USB device");
+            onInfo(getString(R.string.msg_unknown_usb_device));
         }
-        setUIUSBConnected(service.connected);
+        reflectUSBConnected(service.connected);
         if (service.connected) {
             // soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
         }
     }
 
-    private void setUIUSBConnected(boolean connected) {
+    private void reflectUSBConnected(boolean connected) {
         if (connected) {
             textStatusUSB.setText(getString(R.string.label_connected));
-            switchGateway.setChecked(false);
             switchGateway.setEnabled(true);
         } else {
             textStatusUSB.setText(getString(R.string.label_disconnected));
-            switchGateway.setChecked(false);
+            reflectGatewayRunning(false);
             switchGateway.setEnabled(false);
         }
     }
 
     private void checkTheme() {
-        if (lgwSettings.getTheme().equals("dark"))
+        if (lgwSettings.getTheme().equals(getString(R.string.theme_name_dark)))
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         else
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
@@ -340,4 +363,5 @@ public class MainActivity extends AppCompatActivity
         }
         updateUiRegion();
     }
+
 }

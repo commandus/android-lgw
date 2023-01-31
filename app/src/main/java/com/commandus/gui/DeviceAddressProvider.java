@@ -1,4 +1,4 @@
-package com.commandus.lgw;
+package com.commandus.gui;
 
 import android.content.ContentProvider;
 import android.content.ContentUris;
@@ -19,7 +19,7 @@ public class DeviceAddressProvider extends ContentProvider {
     // content URI
     static final String URL = "content://" + PROVIDER_NAME;
     // parsing the content URI
-    static final Uri CONTENT_URI = Uri.parse(URL);
+    public static final Uri CONTENT_URI = Uri.parse(URL);
 
     static final String FN_ID = "id";
     static final String FN_ADDRESS = "address";

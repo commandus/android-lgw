@@ -1,4 +1,4 @@
-package com.commandus.lgw;
+package com.commandus.gui;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
@@ -12,8 +12,13 @@ import android.provider.Settings;
 
 import androidx.annotation.Nullable;
 
-import com.commandus.serial.SerialPort;
+import com.commandus.lgw.LGW;
+import com.commandus.lgw.LGWListener;
+import com.commandus.lgw.Payload;
+import com.commandus.lgw.R;
+import com.commandus.lgw.SerialIO;
 import com.commandus.serial.SerialErrorListener;
+import com.commandus.serial.SerialPort;
 import com.commandus.serial.SerialSocket;
 
 import java.io.File;
@@ -27,8 +32,13 @@ public class LGWService extends Service implements
         LGWListener, SerialIO, SerialErrorListener {
 
     private SerialSocket usbSerialSocket;
+
+    public PayloadAdapter payloadAdapter;
+
+
     /**
      * Return opened USB COM port
+     *
      * @return >0 file descriptor, 0- no USB device found, <0- system error while open port
      */
     public int getUSBPortFileDescriptor() {
@@ -62,6 +72,8 @@ public class LGWService extends Service implements
 
     public LGW lgw;
     public boolean connected;
+    public boolean running;
+    public int valueCount;
 
     /**
      * Lifecylce
@@ -70,6 +82,8 @@ public class LGWService extends Service implements
         mainLooper = new Handler(Looper.getMainLooper());
         binder = new LGWServiceBinder();
         lgw = new LGW();
+        payloadAdapter = new PayloadAdapter();
+        valueCount = 0;
     }
 
     @Override
@@ -87,12 +101,12 @@ public class LGWService extends Service implements
 
     /**
      * @return false- permission denied
-     * */
+     */
     public boolean connectSerialPort() {
-        onInfo("Connecting USB serial port..");
+        onInfo(getString(R.string.msg_connecting_usb_serial_port));
         usbSerialSocket = SerialPort.open(this);
         if (usbSerialSocket == null) {
-            onInfo("Error open serial port: " + SerialPort.reason);
+            onInfo(getString(R.string.err_open_serial_port) + SerialPort.reason);
             return false;
         }
         connected = usbSerialSocket.connect(this);
@@ -136,7 +150,7 @@ public class LGWService extends Service implements
 
     @Override
     public void onInfo(
-        String message
+            String message
     ) {
         log2file(message);
 
@@ -164,6 +178,7 @@ public class LGWService extends Service implements
 
     @Override
     public void onDisconnected() {
+        running = false;
         synchronized (this) {
             mainLooper.post(() -> {
                 if (listener != null) {
@@ -175,6 +190,7 @@ public class LGWService extends Service implements
 
     @Override
     public void onStarted(String gatewayId, String regionName, int regionIndex) {
+        running = true;
         synchronized (this) {
             mainLooper.post(() -> {
                 if (listener != null) {
@@ -186,6 +202,7 @@ public class LGWService extends Service implements
 
     @Override
     public void onFinished(String message) {
+        running = false;
         synchronized (this) {
             mainLooper.post(() -> {
                 if (listener != null) {
@@ -216,7 +233,7 @@ public class LGWService extends Service implements
 
     @Override
     public int onSetAttr(
-        boolean blocking
+            boolean blocking
     ) {
         usbSerialSocket.setBlocking(blocking);
         return 0;
@@ -224,6 +241,7 @@ public class LGWService extends Service implements
 
     @Override
     public void onValue(Payload payload) {
+        valueCount++;
         synchronized (this) {
             mainLooper.post(() -> {
                 if (listener != null) {

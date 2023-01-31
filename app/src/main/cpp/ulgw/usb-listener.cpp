@@ -105,9 +105,10 @@ bool USBListener::add(
 
 /**
  * @param config GatewaySettings* mandatory can not be NULL
+ * @param flags optional flags
  * @return
  */
-int USBListener::listen(void *config)
+int USBListener::listen(void *config, int flags)
 {
     if (!config)
         return ERR_CODE_NO_CONFIG;
@@ -115,14 +116,15 @@ int USBListener::listen(void *config)
     listener.packetListener = this;
     // set config
     listener.config = (GatewaySettings *) config;
+    listener.flags = flags;
     // copy verbosity level
     listener.setLogVerbosity(verbosity);
     // copy log
-    listener.setOnLog(eventProcessor);
+    listener.setOnLog(onLog);
     listener.setOnSpectralScan(onSpectralScan);
     listener.setOnUpstream(onUpstream);
 
-    int r =  listener.start();
+    int r = listener.start();
     if (r)
         return r;
     while (!listener.isStopped()) {

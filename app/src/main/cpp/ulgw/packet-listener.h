@@ -10,7 +10,7 @@
 #include "identity-service.h"
 #include "device-history-service-abstract.h"
 #include "gateway-list.h"
-#include "lgw-event-intf.h"
+#include "log-intf.h"
 
 /**
  * Abstract class listen for packets sent by Semtech's gateway
@@ -33,7 +33,7 @@ public:
 
 	bool stopped;
 
-    LGWEventIntf *eventProcessor;
+    LogIntf *onLog;
 
 	std::function<void(
 		void *env,
@@ -60,9 +60,9 @@ public:
     int add(const std::vector<std::string> &value, int hint);
 	virtual void clear();
 
-	virtual int listen(void *config) = 0;
+	virtual int listen(void *config, int flags) = 0;
 
-	void setLogger(int aVerbosity, LGWEventIntf *value);
+	void setLogger(int aVerbosity, LogIntf *value);
 
 	void setHandler(LoraPacketHandler *value);
 	void setIdentityService(IdentityService* value);

@@ -7,6 +7,7 @@
 #include "lora-gateway-listener.h"
 #include "libloragw-helper.h"
 #include "android-helper.h"
+#include "log-intf.h"
 #include "errlist.h"
 
 #include "utilstring.h"
@@ -144,7 +145,7 @@ extern "C" void printf_c1(
         jVM->DetachCurrentThread();
 }
 
-class JavaLGWEvent: public LGWEventIntf {
+class JavaLGWEvent: public LogIntf {
 public:
     void onInfo(
         void *env,
@@ -308,7 +309,7 @@ static void run(
     }
 
     listener->setLogger(verbosity, &javaCb);
-    if (!listener->eventProcessor) {
+    if (!listener->onLog) {
         std::stringstream ss;
         ss << ERR_MESSAGE << ERR_CODE_INSUFFICIENT_MEMORY << ": " << ERR_INSUFFICIENT_MEMORY << std::endl;
         javaCb.onFinished(ss.str());
@@ -318,16 +319,17 @@ static void run(
     std::stringstream ss;
     ss << "Listening, Region "
        << memSetupMemGatewaySettingsStorage[regionIdx].name << std::endl;
-    listener->eventProcessor->onInfo(listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
+    listener->onLog->onInfo(listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
 
-    listener->eventProcessor->onInfo(listener, LOG_INFO, LOG_MAIN_FUNC, 0, "Start listen");
-    int r = listener->listen(&gwSettings);
-    listener->eventProcessor->onInfo(listener, LOG_INFO, LOG_MAIN_FUNC, 0, "Stop listen");
+    listener->onLog->onInfo(listener, LOG_INFO, LOG_MAIN_FUNC, 0, "Start listen");
+    int flags = FLAG_GATEWAY_LISTENER_NO_SEND | FLAG_GATEWAY_LISTENER_NO_BEACON;
+    int r = listener->listen(&gwSettings, flags);
+    listener->onLog->onInfo(listener, LOG_INFO, LOG_MAIN_FUNC, 0, "Stop listen");
 
-    if (r && listener->eventProcessor) {
+    if (r && listener->onLog) {
         std::stringstream ss;
         ss << ERR_MESSAGE << r << ": " << strerror_lorawan_ns(r) << std::endl;
-        listener->eventProcessor->onInfo(listener, LOG_ERR, LOG_MAIN_FUNC, r, ss.str());
+        listener->onLog->onInfo(listener, LOG_ERR, LOG_MAIN_FUNC, r, ss.str());
     }
     delete libLoragwHelper.onOpenClose;
     libLoragwHelper.onOpenClose = nullptr;

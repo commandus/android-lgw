@@ -6,7 +6,7 @@
     app:startDestination="@id/DeviceListFragment">
     <fragment
         android:id="@+id/DeviceListFragment"
-        android:name="com.commandus.lgw.AddressListFragment"
+        android:name="com.commandus.gui.AddressListFragment"
         android:label="@string/fragment_device_list_label"
         tools:layout="@layout/fragment_address_list">
         <action
@@ -15,7 +15,7 @@
     </fragment>
     <fragment
         android:id="@+id/DeviceItemFragment"
-        android:name="com.commandus.lgw.AddressItemFragment"
+        android:name="com.commandus.gui.AddressItemFragment"
         android:label="@string/fragment_device"
         tools:layout="@layout/fragment_address_item">
         <action

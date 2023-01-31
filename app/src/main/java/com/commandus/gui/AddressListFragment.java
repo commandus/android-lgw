@@ -1,4 +1,4 @@
-package com.commandus.lgw;
+package com.commandus.gui;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,6 +10,8 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.commandus.lgw.AddressSelection;
+import com.commandus.lgw.R;
 import com.commandus.lgw.databinding.FragmentAddressListBinding;
 
 public class AddressListFragment extends Fragment

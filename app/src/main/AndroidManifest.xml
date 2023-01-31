@@ -20,7 +20,7 @@
         android:theme="@style/Theme.Rak2287usb"
         tools:targetApi="31">
         <activity
-            android:name=".DevicesActivity"
+            android:name="com.commandus.gui.DevicesActivity"
             android:exported="false"
             android:label="@string/title_activity_devices"
             android:theme="@style/Theme.Rak2287usb.NoActionBar">
@@ -30,13 +30,13 @@
         </activity>
 
         <provider
-            android:name=".DeviceAddressProvider"
+            android:name="com.commandus.gui.DeviceAddressProvider"
             android:authorities="device.lora"
             android:enabled="true"
             android:exported="true" />
 
         <activity
-            android:name=".MainActivity"
+            android:name="com.commandus.gui.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -57,7 +57,7 @@
             -->
         </activity>
 
-        <service android:name=".LGWService" />
+        <service android:name="com.commandus.gui.LGWService" />
     </application>
 
 </manifest>

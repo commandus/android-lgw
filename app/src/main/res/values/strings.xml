@@ -14,7 +14,7 @@
     <string name="label_add">Add</string>
 
     <string name="label_button_devices">Devices</string>
-    <string name="label_button_device_count">\"Devices: \"</string>
+    <string name="label_button_device_count">Devices: </string>
     <string name="label_device_address">Address</string>
     <string name="label_device_eui">EUI</string>
     <string name="label_device_nwkskey">nwkSKey</string>
@@ -24,8 +24,16 @@
     <string name="label_device_save">Save</string>
     <string name="label_device_new_device_state"></string>
     <string name="label_usb_gateway">USB gateway</string>
+    <string name="label_running">Running</string>
     <string name="label_stopped">Stopped</string>
     <string name="label_region">Region</string>
     <string name="label_zero">0</string>
     <string name="message_no_usb_connection_established">No USB connection established</string>
+    <string name="msg_no_service">No service</string>
+    <string name="msg_already_connected">Already connected</string>
+    <string name="msg_unknown_usb_device">Unknown USB device</string>
+    <string name="theme_name_dark">dark</string>
+    <string name="msg_finished">Finished </string>
+    <string name="msg_connecting_usb_serial_port">Connecting USB serial port..</string>
+    <string name="err_open_serial_port">Error open serial port: </string>
 </resources>

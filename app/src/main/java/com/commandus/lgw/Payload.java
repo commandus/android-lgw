@@ -8,7 +8,7 @@ public class Payload {
     Date received;
     String devEmui;
     String devName;
-    String hexPayload;
+    public String hexPayload;
     int frequency;
     int rssi;
     float lsnr;

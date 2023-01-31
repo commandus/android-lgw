@@ -77,7 +77,7 @@ void AndroidIdentityService::list(std::vector<NetworkIdentity> &retval, size_t o
 // Entries count
 size_t AndroidIdentityService::size()
 {
-
+    return 0;
 }
 
 void AndroidIdentityService::put(DEVADDR &devaddr, DEVICEID &id)

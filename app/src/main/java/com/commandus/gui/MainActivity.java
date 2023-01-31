@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.hardware.usb.UsbManager;
-import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -53,7 +52,8 @@ public class MainActivity extends AppCompatActivity
     private SwitchCompat switchGateway;
     private TextView textStatusUSB;
     private TextView textStatusLGW;
-    private TextView textCountRead;
+    private TextView textCountReceive;
+    private TextView textCountValue;
     private RecyclerView recyclerViewLog;
 
     @Override
@@ -67,6 +67,9 @@ public class MainActivity extends AppCompatActivity
             @SuppressLint("HardwareIds") String gwId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
             setTitle(getString(R.string.app_name) + " " + gwId);
             // reflect does USB gateway connected already
+            if (!service.connected) {
+                service.connected = isUSBConnected();
+            }
             reflectUSBConnected(service.connected);
             reflectGatewayRunning(service.running);
         });
@@ -88,11 +91,11 @@ public class MainActivity extends AppCompatActivity
         com.commandus.lgw.databinding.ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        /*
         AudioAttributes attributes = new AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build();
-        /*
         soundPool = new SoundPool.Builder()
             .setAudioAttributes(attributes)
             .setMaxStreams(5)
@@ -111,10 +114,8 @@ public class MainActivity extends AppCompatActivity
         switchGateway = binding.switchGateway;
         textStatusUSB = binding.textStatusUSB;
         textStatusLGW = binding.textStatusLGW;
-        textCountRead = binding.textLGWReadCount;
-        // TextView textCountWrite = binding.textLGWWriteCount;
-
-        // TextView textStatusLGW = binding.textStatusLGW;
+        textCountReceive = binding.textLGWReceiveCount;
+        textCountValue = binding.textLGWValueCount;
         recyclerViewLog = binding.recyclerViewLog;
 
         DeviceAddresses deviceAddresses = new DeviceAddresses();
@@ -277,9 +278,15 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    public void onReceive(Payload value) {
+        pushMessage(value.hexPayload);
+        textCountReceive.setText(Integer.toString(service.receiveCount));
+    }
+
+    @Override
     public void onValue(Payload value) {
         pushMessage(value.hexPayload);
-        textCountRead.setText(Integer.toString(service.valueCount));
+        textCountValue.setText(Integer.toString(service.valueCount));
     }
 
     @Override

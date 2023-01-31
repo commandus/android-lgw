@@ -113,7 +113,7 @@
             android:text="@string/label_stopped" />
 
         <TextView
-            android:id="@+id/textLGWReadCount"
+            android:id="@+id/textLGWReceiveCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:minWidth="20pt"
@@ -122,8 +122,7 @@
             android:text="@string/label_zero" />
 
         <TextView
-            android:id="@+id/textLGWWriteCount"
-            android:visibility="invisible"
+            android:id="@+id/textLGWValueCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:minWidth="20pt"

@@ -1,6 +1,7 @@
 package com.commandus.lgw;
 
 public interface LGWListener {
+    void onReceive(final Payload value);
     void onValue(final Payload value);
     void onInfo(final String msg);
     void onConnected(final boolean on);

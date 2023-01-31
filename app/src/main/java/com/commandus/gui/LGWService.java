@@ -73,6 +73,7 @@ public class LGWService extends Service implements
     public LGW lgw;
     public boolean connected;
     public boolean running;
+    public int receiveCount;
     public int valueCount;
 
     /**
@@ -83,6 +84,7 @@ public class LGWService extends Service implements
         binder = new LGWServiceBinder();
         lgw = new LGW();
         payloadAdapter = new PayloadAdapter();
+        receiveCount = 0;
         valueCount = 0;
     }
 
@@ -109,8 +111,7 @@ public class LGWService extends Service implements
             onInfo(getString(R.string.err_open_serial_port) + SerialPort.reason);
             return false;
         }
-        connected = usbSerialSocket.connect(this);
-        onConnected(connected);
+        onConnected(usbSerialSocket.connect(this));
         return connected;
     }
 
@@ -150,7 +151,7 @@ public class LGWService extends Service implements
 
     @Override
     public void onInfo(
-            String message
+        String message
     ) {
         log2file(message);
 
@@ -167,6 +168,7 @@ public class LGWService extends Service implements
 
     @Override
     public void onConnected(boolean on) {
+        connected = on;
         synchronized (this) {
             mainLooper.post(() -> {
                 if (listener != null) {
@@ -178,6 +180,7 @@ public class LGWService extends Service implements
 
     @Override
     public void onDisconnected() {
+        connected = false;
         running = false;
         synchronized (this) {
             mainLooper.post(() -> {
@@ -215,28 +218,36 @@ public class LGWService extends Service implements
     @Override
     public byte[] onRead(int bytes) {
         if (usbSerialSocket != null) {
-            byte[] r = usbSerialSocket.read(bytes);
-            // onInfo("Read " + r.length + " bytes: " + LgwHelper.bytesToHex(r) + ", buffer size: " + Integer.toString(bytes));
-            return r;
+            return usbSerialSocket.read(bytes);
         }
         return new byte[0];
     }
 
     @Override
     public int onWrite(byte[] data) {
-        // onInfo("Write " + data.length + " bytes: " + LgwHelper.bytesToHex(data));
         if (usbSerialSocket == null)
             return -1; // error
-        int r = usbSerialSocket.write(data);
-        return r;
+        return usbSerialSocket.write(data);
     }
 
     @Override
     public int onSetAttr(
-            boolean blocking
+        boolean blocking
     ) {
         usbSerialSocket.setBlocking(blocking);
         return 0;
+    }
+
+    @Override
+    public void onReceive(Payload payload) {
+        receiveCount++;
+        synchronized (this) {
+            mainLooper.post(() -> {
+                if (listener != null) {
+                    listener.onReceive(payload);
+                }
+            });
+        }
     }
 
     @Override

@@ -33,6 +33,7 @@ static jmethodID android_LGW_onInfo = nullptr;
 static jmethodID android_LGW_onConnected = nullptr;
 static jmethodID android_LGW_onDisconnected = nullptr;
 static jmethodID android_LGW_onValue = nullptr;
+static jmethodID android_LGW_onReceive = nullptr;
 static jmethodID android_LGW_onStart = nullptr;
 static jmethodID android_LGW_onFinish = nullptr;
 static jmethodID android_LGW_onRead = nullptr;
@@ -224,8 +225,25 @@ public:
             jVM->DetachCurrentThread();
     }
 
-    void onValue(
+    void onReceive(
         Payload &value
+    ) override
+    {
+        if (!loggerObject || !android_LGW_onReceive)
+            return;
+        bool requireDetach;
+        JNIEnv *jEnv = getJavaEnv(requireDetach);
+        if (!jEnv)
+            return;
+        jobject jPayload;
+        // TODO
+        jEnv->CallVoidMethod(loggerObject, android_LGW_onReceive, jPayload);
+        if (requireDetach)
+            jVM->DetachCurrentThread();
+    }
+
+    void onValue(
+            Payload &value
     ) override
     {
         if (!loggerObject || !android_LGW_onValue)

@@ -1,5 +1,6 @@
 package com.commandus.gui;
 
+import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,20 +9,38 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.commandus.lgw.GatewayEvent;
+import com.commandus.lgw.Payload;
 import com.commandus.lgw.R;
 
 import java.util.ArrayList;
 
-public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHolder> {
+public class GatewayEventAdapter extends RecyclerView.Adapter<GatewayEventAdapter.ViewHolder> {
+    public ArrayList<GatewayEvent> logData;
 
-    private RecyclerView recyclerView;
-    public ArrayList<String> logData;
-
-    public void push(String item) {
-        logData.add(item);
+    private void addItem(GatewayEvent value) {
+        logData.add(value);
         if (logData.size() > 256)
             logData.remove(0);
         notifyDataSetChanged();
+    }
+
+    public void push(String message) {
+        GatewayEvent e = new GatewayEvent();
+        e.message = message;
+        addItem(e);
+    }
+
+    public void pushPayLoad(Payload payload) {
+        GatewayEvent e = new GatewayEvent();
+        e.payload = payload;
+        addItem(e);
+    }
+
+    public void pushReceived(Payload payload) {
+        GatewayEvent e = new GatewayEvent();
+        e.rawPayload = payload;
+        addItem(e);
     }
 
     /**
@@ -34,7 +53,7 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
         public ViewHolder(View view) {
             super(view);
             // Define click listener for the ViewHolder's View
-            textView = view.findViewById(R.id.textViewListItemPayload);
+            textView = view.findViewById(R.id.textViewGatewayEvent);
         }
 
         public TextView getTextView() {
@@ -44,15 +63,15 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
 
     // Create new views (invoked by the layout manager)
 
-    public PayloadAdapter() {
-        logData = new ArrayList<String>();
+    public GatewayEventAdapter() {
+        logData = new ArrayList<>();
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
         View view = LayoutInflater.from(viewGroup.getContext())
-                .inflate(R.layout.payload_list_item, viewGroup, false);
+                .inflate(R.layout.gateway_event_list_item, viewGroup, false);
         return new ViewHolder(view);
     }
 
@@ -61,7 +80,14 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
     public void onBindViewHolder(ViewHolder viewHolder, final int position) {
         // Get element from your dataset at this position and replace the
         // contents of the view with that element
-        viewHolder.getTextView().setText(logData.get(position));
+        GatewayEvent e = logData.get(position);
+        TextView tv = viewHolder.getTextView();
+        if (e.hasPayload())
+            tv.setTypeface(null, Typeface.BOLD);
+        else
+            if (e.hasRawPayload())
+                tv.setTypeface(null, Typeface.ITALIC);
+        tv.setText(e.toString());
     }
 
     // Return the size of your dataset (invoked by the layout manager)

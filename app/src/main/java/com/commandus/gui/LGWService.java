@@ -16,7 +16,6 @@ import com.commandus.lgw.LGW;
 import com.commandus.lgw.LGWListener;
 import com.commandus.lgw.Payload;
 import com.commandus.lgw.R;
-import com.commandus.lgw.SerialIO;
 import com.commandus.serial.SerialErrorListener;
 import com.commandus.serial.SerialPort;
 import com.commandus.serial.SerialSocket;
@@ -29,11 +28,11 @@ import java.util.Date;
  * create notification and queue serial data while activity is not in the foreground
  */
 public class LGWService extends Service implements
-        LGWListener, SerialIO, SerialErrorListener {
+        LGWListener, SerialErrorListener {
 
     private SerialSocket usbSerialSocket;
 
-    public PayloadAdapter payloadAdapter;
+    public GatewayEventAdapter gatewayEventAdapter;
 
 
     /**
@@ -68,7 +67,6 @@ public class LGWService extends Service implements
     private final Handler mainLooper;
     private final IBinder binder;
     private LGWListener listener;
-    private SerialIO serialIO;
 
     public LGW lgw;
     public boolean connected;
@@ -83,7 +81,7 @@ public class LGWService extends Service implements
         mainLooper = new Handler(Looper.getMainLooper());
         binder = new LGWServiceBinder();
         lgw = new LGW();
-        payloadAdapter = new PayloadAdapter();
+        gatewayEventAdapter = new GatewayEventAdapter();
         receiveCount = 0;
         valueCount = 0;
     }
@@ -135,26 +133,10 @@ public class LGWService extends Service implements
         }
     }
 
-    public static final String LOG_FILE_NAME = "lgw.log";
-
-    private void log2file(String message) {
-        if (true) {
-            try {
-                File docs = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "/lgw_com.log");
-                FileOutputStream output = new FileOutputStream(docs.getAbsoluteFile(), true);
-                output.write((new Date().toString() + ": " + message + "\n").getBytes());
-                output.close();
-            } catch (Exception ignored) {
-            }
-        }
-    }
-
     @Override
     public void onInfo(
         String message
     ) {
-        log2file(message);
-
         synchronized (this) {
             if (listener != null) {
                 mainLooper.post(() -> {

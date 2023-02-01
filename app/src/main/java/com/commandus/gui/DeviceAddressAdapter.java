@@ -28,7 +28,7 @@ public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdap
         public ViewHolder(View view) {
             super(view);
             // Define click listener for the ViewHolder's View
-            textView = view.findViewById(R.id.textViewListItemPayload);
+            textView = view.findViewById(R.id.textViewGatewayEvent);
         }
 
         public TextView getTextView() {
@@ -49,9 +49,9 @@ public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdap
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
         View view = LayoutInflater.from(viewGroup.getContext())
-                .inflate(R.layout.payload_list_item, viewGroup, false);
+                .inflate(R.layout.gateway_event_list_item, viewGroup, false);
         if (mAddressSelection != null) {
-            final RecyclerView.ViewHolder holder = new PayloadAdapter.ViewHolder(view);
+            final RecyclerView.ViewHolder holder = new GatewayEventAdapter.ViewHolder(view);
             view.setOnClickListener(view1 -> {
                 final int position = holder.getBindingAdapterPosition();
                 mAddressSelection.onSelect(position);

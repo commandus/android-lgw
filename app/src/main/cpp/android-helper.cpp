@@ -18,7 +18,7 @@
 static void append2logfile(const char *fmt) {
     __android_log_print(ANDROID_LOG_DEBUG, "append2logfile", "%s", fmt);
     FILE *f = fopen("/storage/emulated/0/Android/data/com.commandus.lgw/files/Documents/lgw_com.log", "a+");
-    if (f != NULL) {
+    if (f != nullptr) {
         fprintf(f, "%s\r\n", fmt);
         fclose(f);
     }
@@ -27,7 +27,9 @@ static void append2logfile(const char *fmt) {
 static LoraGatewayListener loraGatewayListener;
 
 static JavaVM *jVM;
-static jclass loggerClass = nullptr;
+static jclass loggerCls = nullptr;
+static jclass payloadCls = nullptr;
+
 static jobject loggerObject = nullptr;
 static jmethodID android_LGW_onInfo = nullptr;
 static jmethodID android_LGW_onConnected = nullptr;
@@ -41,6 +43,7 @@ static jmethodID android_LGW_onWrite = nullptr;
 static jmethodID android_LGW_onSetAttr = nullptr;
 static jmethodID android_LGW_open = nullptr;
 static jmethodID android_LGW_close = nullptr;
+static jmethodID payloadCnstr = nullptr;
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     jVM = vm;
@@ -55,32 +58,37 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_setPayloadListener(
 {
     if (lgwListener) {
         loggerObject = (jobject) env->NewGlobalRef(lgwListener);
-        loggerClass = env->GetObjectClass(loggerObject);
+        loggerCls = env->GetObjectClass(loggerObject);
+        jclass lpayloadCls = env->FindClass("com/commandus/lgw/Payload");
+        payloadCls = reinterpret_cast<jclass>(env->NewGlobalRef(lpayloadCls));
 
-        android_LGW_onInfo = env->GetMethodID(loggerClass, "onInfo", "(Ljava/lang/String;)V");
+        android_LGW_onInfo = env->GetMethodID(loggerCls, "onInfo", "(Ljava/lang/String;)V");
 
-        android_LGW_onConnected = env->GetMethodID(loggerClass, "onConnected", "(Z)V");
-        android_LGW_onDisconnected = env->GetMethodID(loggerClass, "onDisconnected", "()V");
-        android_LGW_onValue = env->GetMethodID(loggerClass, "onValue",
+        android_LGW_onConnected = env->GetMethodID(loggerCls, "onConnected", "(Z)V");
+        android_LGW_onDisconnected = env->GetMethodID(loggerCls, "onDisconnected", "()V");
+        android_LGW_onReceive = env->GetMethodID(loggerCls, "onReceive",
+                                                 "(Lcom/commandus/lgw/Payload;)V");
+        android_LGW_onValue = env->GetMethodID(loggerCls, "onValue",
                                                "(Lcom/commandus/lgw/Payload;)V");
-        android_LGW_onStart = env->GetMethodID(loggerClass, "onStarted",
+        android_LGW_onStart = env->GetMethodID(loggerCls, "onStarted",
                                                "(Ljava/lang/String;Ljava/lang/String;I)V");
-        android_LGW_onFinish = env->GetMethodID(loggerClass, "onFinished", "(Ljava/lang/String;)V");
+        android_LGW_onFinish = env->GetMethodID(loggerCls, "onFinished", "(Ljava/lang/String;)V");
 
-        android_LGW_onRead = env->GetMethodID(loggerClass, "onRead", "(I)[B");
-        android_LGW_onWrite = env->GetMethodID(loggerClass, "onWrite", "([B)I");
-        android_LGW_onSetAttr = env->GetMethodID(loggerClass, "onSetAttr", "(Z)I");
-
+        android_LGW_onRead = env->GetMethodID(loggerCls, "onRead", "(I)[B");
+        android_LGW_onWrite = env->GetMethodID(loggerCls, "onWrite", "([B)I");
+        android_LGW_onSetAttr = env->GetMethodID(loggerCls, "onSetAttr", "(Z)I");
         android_LGW_open = nullptr;
         android_LGW_close = nullptr;
+        payloadCnstr = env->GetMethodID(payloadCls, "<init>", "(Ljava/lang/String;IIF)V");
     } else {
         if (loggerObject)
             env->DeleteGlobalRef(loggerObject);
         loggerObject = nullptr;
-        loggerClass = nullptr;
+        loggerCls = nullptr;
         android_LGW_onInfo = nullptr;
         android_LGW_onConnected = nullptr;
         android_LGW_onDisconnected = nullptr;
+        android_LGW_onReceive = nullptr;
         android_LGW_onValue = nullptr;
         android_LGW_onStart = nullptr;
         android_LGW_onFinish = nullptr;
@@ -91,6 +99,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_setPayloadListener(
 
         android_LGW_open = nullptr;
         android_LGW_close = nullptr;
+        payloadCnstr = nullptr;
     }
 }
 
@@ -235,15 +244,20 @@ public:
         JNIEnv *jEnv = getJavaEnv(requireDetach);
         if (!jEnv)
             return;
-        jobject jPayload;
-        // TODO
-        jEnv->CallVoidMethod(loggerObject, android_LGW_onReceive, jPayload);
+        if (payloadCls) {
+            if (payloadCnstr) {
+                jstring hexPayload = jEnv->NewStringUTF(hexString(value.payload).c_str());
+                jobject jPayload = jEnv->NewObject(payloadCls, payloadCnstr, hexPayload,
+                    value.frequency, value.rssi, value.lsnr);
+                jEnv->CallVoidMethod(loggerObject, android_LGW_onReceive, jPayload);
+            }
+        }
         if (requireDetach)
             jVM->DetachCurrentThread();
     }
 
     void onValue(
-            Payload &value
+        Payload &value
     ) override
     {
         if (!loggerObject || !android_LGW_onValue)
@@ -253,8 +267,16 @@ public:
         if (!jEnv)
             return;
         jobject jPayload;
-        // TODO
-        jEnv->CallVoidMethod(loggerObject, android_LGW_onValue, jPayload);
+        jclass clsz = jEnv->FindClass("com/commandus/lgw/Payload");
+        if (clsz) {
+            jmethodID cnstr = jEnv->GetMethodID(clsz, "<init>", "(Ljava/lang/String;IIF)V");
+            if (cnstr) {
+                jstring hexPayload = jEnv->NewStringUTF(hexString(value.payload).c_str());
+                jPayload = jEnv->NewObject(clsz, cnstr, hexPayload,
+                                           value.frequency, value.rssi, value.lsnr);
+                jEnv->CallVoidMethod(loggerObject, android_LGW_onValue, jPayload);
+            }
+        }
         if (requireDetach)
             jVM->DetachCurrentThread();
     }

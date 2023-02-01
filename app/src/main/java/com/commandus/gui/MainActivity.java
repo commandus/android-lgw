@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity
     public void onServiceConnected(ComponentName name, IBinder binder) {
         service = ((LGWService.LGWServiceBinder) binder).getService();
         service.attach(this);
-        recyclerViewLog.setAdapter(service.payloadAdapter);
+        recyclerViewLog.setAdapter(service.gatewayEventAdapter);
 
         runOnUiThread(() -> {
             updateUiRegion();
@@ -253,8 +253,8 @@ public class MainActivity extends AppCompatActivity
     private void pushMessage(String msg) {
         if (service == null)
             return;
-        service.payloadAdapter.push(msg);
-        recyclerViewLog.smoothScrollToPosition(service.payloadAdapter.logData.size() - 1);
+        service.gatewayEventAdapter.push(msg);
+        recyclerViewLog.smoothScrollToPosition(service.gatewayEventAdapter.logData.size() - 1);
     }
 
     @Override
@@ -275,6 +275,21 @@ public class MainActivity extends AppCompatActivity
         reflectGatewayRunning(false);
         pushMessage(getString(R.string.msg_finished) + message);
         // soundPool.play(SOUND_BEEP, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
+    }
+
+    @Override
+    public byte[] onRead(int bytes) {
+        return new byte[0];
+    }
+
+    @Override
+    public int onWrite(byte[] data) {
+        return 0;
+    }
+
+    @Override
+    public int onSetAttr(boolean blocking) {
+        return 0;
     }
 
     @Override

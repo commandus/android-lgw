@@ -34,6 +34,22 @@ public class Payload {
         this.hexPayload = payload;
     }
 
+    public Payload(
+        String hexPayload,
+        int frequency,
+        int rssi,
+        float lsnr
+    ) {
+        this.received = new Date();
+        this.devEmui = "";
+        this.devName = "";
+        this.hexPayload = "";
+        this.frequency = frequency;
+        this.rssi = rssi;
+        this.lsnr = lsnr;
+        this.hexPayload = hexPayload;
+    }
+
     public Payload(Payload p) {
         received = p.received;
         devEmui = p.devEmui;

@@ -173,7 +173,6 @@ public class MainActivity extends AppCompatActivity
         if (service != null) {
             service.stopGateway();
         }
-        reflectGatewayRunning(false);
     }
 
     private boolean startLGW() {
@@ -271,9 +270,8 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onFinished(String message) {
-        pushMessage(getString(R.string.label_stopped));
+        pushMessage(message);
         reflectGatewayRunning(false);
-        pushMessage(getString(R.string.msg_finished) + message);
         // soundPool.play(SOUND_BEEP, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
     }
 
@@ -294,13 +292,15 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onReceive(Payload value) {
-        pushMessage(value.hexPayload);
+        // refresh view
+        recyclerViewLog.smoothScrollToPosition(service.gatewayEventAdapter.logData.size() - 1);
         textCountReceive.setText(Integer.toString(service.receiveCount));
     }
 
     @Override
     public void onValue(Payload value) {
-        pushMessage(value.hexPayload);
+        // refresh view
+        recyclerViewLog.smoothScrollToPosition(service.gatewayEventAdapter.logData.size() - 1);
         textCountValue.setText(Integer.toString(service.valueCount));
     }
 

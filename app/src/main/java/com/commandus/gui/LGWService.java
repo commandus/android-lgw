@@ -225,6 +225,7 @@ public class LGWService extends Service implements
         receiveCount++;
         synchronized (this) {
             mainLooper.post(() -> {
+                gatewayEventAdapter.pushReceived(payload);
                 if (listener != null) {
                     listener.onReceive(payload);
                 }
@@ -237,6 +238,7 @@ public class LGWService extends Service implements
         valueCount++;
         synchronized (this) {
             mainLooper.post(() -> {
+                gatewayEventAdapter.pushPayLoad(payload);
                 if (listener != null) {
                     listener.onValue(payload);
                 }

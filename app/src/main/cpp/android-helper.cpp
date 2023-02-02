@@ -24,6 +24,34 @@ static void append2logfile(const char *fmt) {
     }
 }
 
+/**
+ * @param env
+ * @param jStr
+ * @return string
+ * @see https://stackoverflow.com/questions/41820039/jstringjni-to-stdstringc-with-utf8-characters
+ */
+static std::string jstring2string(
+    JNIEnv *env,
+    jstring jStr
+) {
+    if (!jStr)
+        return "";
+
+    const jclass stringClass = env->GetObjectClass(jStr);
+    const jmethodID getBytes = env->GetMethodID(stringClass, "getBytes", "(Ljava/lang/String;)[B");
+    const jbyteArray stringJbytes = (jbyteArray) env->CallObjectMethod(jStr, getBytes, env->NewStringUTF("UTF-8"));
+
+    size_t length = (size_t) env->GetArrayLength(stringJbytes);
+    jbyte* pBytes = env->GetByteArrayElements(stringJbytes, nullptr);
+
+    std::string ret = std::string((char *)pBytes, length);
+    env->ReleaseByteArrayElements(stringJbytes, pBytes, JNI_ABORT);
+
+    env->DeleteLocalRef(stringJbytes);
+    env->DeleteLocalRef(stringClass);
+    return ret;
+}
+
 static LoraGatewayListener loraGatewayListener;
 
 static JavaVM *jVM;
@@ -37,7 +65,7 @@ static jmethodID android_LGW_onDisconnected = nullptr;
 static jmethodID android_LGW_onValue = nullptr;
 static jmethodID android_LGW_onReceive = nullptr;
 static jmethodID android_LGW_onStart = nullptr;
-static jmethodID android_LGW_onFinish = nullptr;
+static jmethodID android_LGW_onFinished = nullptr;
 static jmethodID android_LGW_onRead = nullptr;
 static jmethodID android_LGW_onWrite = nullptr;
 static jmethodID android_LGW_onSetAttr = nullptr;
@@ -72,7 +100,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_setPayloadListener(
                                                "(Lcom/commandus/lgw/Payload;)V");
         android_LGW_onStart = env->GetMethodID(loggerCls, "onStarted",
                                                "(Ljava/lang/String;Ljava/lang/String;I)V");
-        android_LGW_onFinish = env->GetMethodID(loggerCls, "onFinished", "(Ljava/lang/String;)V");
+        android_LGW_onFinished = env->GetMethodID(loggerCls, "onFinished", "(Ljava/lang/String;)V");
 
         android_LGW_onRead = env->GetMethodID(loggerCls, "onRead", "(I)[B");
         android_LGW_onWrite = env->GetMethodID(loggerCls, "onWrite", "([B)I");
@@ -81,9 +109,14 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_setPayloadListener(
         android_LGW_close = nullptr;
         payloadCnstr = env->GetMethodID(payloadCls, "<init>", "(Ljava/lang/String;IIF)V");
     } else {
-        if (loggerObject)
+        if (loggerObject) {
             env->DeleteGlobalRef(loggerObject);
-        loggerObject = nullptr;
+            loggerObject = nullptr;
+        }
+        if (payloadCls) {
+            env->DeleteGlobalRef(payloadCls);
+            payloadCls = nullptr;
+        }
         loggerCls = nullptr;
         android_LGW_onInfo = nullptr;
         android_LGW_onConnected = nullptr;
@@ -91,7 +124,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_setPayloadListener(
         android_LGW_onReceive = nullptr;
         android_LGW_onValue = nullptr;
         android_LGW_onStart = nullptr;
-        android_LGW_onFinish = nullptr;
+        android_LGW_onFinished = nullptr;
 
         android_LGW_onRead = nullptr;
         android_LGW_onWrite = nullptr;
@@ -155,21 +188,23 @@ extern "C" void printf_c1(
         jVM->DetachCurrentThread();
 }
 
+static LibLoragwHelper libLoragwHelper;
+
 class JavaLGWEvent: public LogIntf {
 public:
     void onInfo(
-        void *env,
-        int level,
-        int moduleCode,
-        int errorCode,
-        const std::string &message
+            void *env,
+            int level,
+            int moduleCode,
+            int errorCode,
+            const std::string &message
     ) override {
         __android_log_print(ANDROID_LOG_DEBUG, "loraGatewayListener", "%s", message.c_str());
         printf_c1(message.c_str());
     }
 
     void onConnected(
-        bool connected
+            bool connected
     ) override
     {
         if (!loggerObject || !android_LGW_onConnected)
@@ -207,11 +242,12 @@ public:
             return;
         std::stringstream ssGatewayId;
         ssGatewayId << std::hex << gatewayId;
-        jstring jgatewayId = jEnv->NewStringUTF(ssGatewayId.str().c_str());
-        jstring jregionName = jEnv->NewStringUTF(regionName.c_str());
+        jstring jGatewayId = jEnv->NewStringUTF(ssGatewayId.str().c_str());
+        jstring jRegionName = jEnv->NewStringUTF(regionName.c_str());
         jint jRegionIndex = regionIndex;
-        jEnv->CallVoidMethod(loggerObject, android_LGW_onStart,
-            jgatewayId, jregionName, jRegionIndex);
+        if (jGatewayId && jRegionName)
+            jEnv->CallVoidMethod(loggerObject, android_LGW_onStart,
+                                 jGatewayId, jRegionName, jRegionIndex);
         if (requireDetach)
             jVM->DetachCurrentThread();
     }
@@ -220,16 +256,15 @@ public:
         const std::string &message
     ) override
     {
-        if (!loggerObject || !android_LGW_onFinish)
+        if (!loggerObject || !android_LGW_onFinished)
             return;
         bool requireDetach;
         JNIEnv *jEnv = getJavaEnv(requireDetach);
         if (!jEnv)
             return;
         jstring jMessage = jEnv->NewStringUTF(message.c_str());
-        if (!jMessage)
-            return;
-        jEnv->CallVoidMethod(loggerObject, android_LGW_onFinish, jMessage);
+        if (jMessage)
+            jEnv->CallVoidMethod(loggerObject, android_LGW_onFinished, jMessage);
         if (requireDetach)
             jVM->DetachCurrentThread();
     }
@@ -248,7 +283,7 @@ public:
             if (payloadCnstr) {
                 jstring hexPayload = jEnv->NewStringUTF(hexString(value.payload).c_str());
                 jobject jPayload = jEnv->NewObject(payloadCls, payloadCnstr, hexPayload,
-                    value.frequency, value.rssi, value.lsnr);
+                                                   value.frequency, value.rssi, value.lsnr);
                 jEnv->CallVoidMethod(loggerObject, android_LGW_onReceive, jPayload);
             }
         }
@@ -282,8 +317,6 @@ public:
     }
 };
 
-static LibLoragwHelper libLoragwHelper;
-
 class GatewayConfigMem : public GatewaySettings {
 public:
     MemGatewaySettingsStorage storage;
@@ -309,30 +342,64 @@ public:
     };
 };
 
+class AndroidGatewayHandler {
+public:
+    IdentityService *identityService;
+    LibLoragwOpenClose *libLoragwOpenClose;
+    PacketListener *listener;
+    AndroidGatewayHandler() {
+        identityService = new AndroidIdentityService();
+        libLoragwOpenClose = new AndroidLoragwOpenClose();
+        libLoragwHelper.onOpenClose = libLoragwHelper.onOpenClose;
+        listener = new USBListener();
+    }
+    virtual ~AndroidGatewayHandler() {
+        if (libLoragwHelper.onOpenClose) {
+            delete libLoragwHelper.onOpenClose;
+            libLoragwHelper.onOpenClose = nullptr;
+        }
+        if (listener) {
+            delete listener;
+            listener = nullptr;
+        }
+        if (identityService) {
+            delete identityService;
+            identityService = nullptr;
+        }
+    }
+};
+
+static AndroidGatewayHandler *listenerHandler = nullptr;
+
 static void run(
     uint64_t gatewayIdentifier,
     size_t regionIdx,
     int verbosity
 )
 {
+    listenerHandler = new AndroidGatewayHandler();
+
     JavaLGWEvent javaCb;
-    libLoragwHelper.bind(&javaCb, new AndroidLoragwOpenClose());
+    libLoragwHelper.bind(&javaCb, listenerHandler->libLoragwOpenClose);
 
     javaCb.onStarted(gatewayIdentifier,
-                     memSetupMemGatewaySettingsStorage[regionIdx].name, regionIdx);
+        memSetupMemGatewaySettingsStorage[regionIdx].name, regionIdx);
 
     if (!libLoragwHelper.onOpenClose) {
         javaCb.onFinished("No open/close");
+        delete listenerHandler;
+        listenerHandler = nullptr;
         return;
     }
 
-    IdentityService *identityService = new AndroidIdentityService();
-    if (!identityService) {
+    if (!listenerHandler->identityService) {
         std::stringstream ss;
         ss << ERR_MESSAGE << ERR_CODE_FAIL_IDENTITY_SERVICE << ": " << ERR_FAIL_IDENTITY_SERVICE
            << memSetupMemGatewaySettingsStorage[regionIdx].name
            << " (settings #" << regionIdx << ")";
         javaCb.onFinished(ss.str());
+        delete listenerHandler;
+        listenerHandler = nullptr;
         return;
     }
 
@@ -340,77 +407,34 @@ static void run(
     // set regional settings
     memSetupMemGatewaySettingsStorage[regionIdx].setup(gwSettings.storage);
 
-    PacketListener *listener = new USBListener();
-    if (!listener) {
+    if (listenerHandler->listener)
+        listenerHandler->listener->setLogger(verbosity, &javaCb);
+    if (!listenerHandler->listener || !listenerHandler->listener->onLog) {
         std::stringstream ss;
         ss << ERR_MESSAGE << ERR_CODE_INSUFFICIENT_MEMORY << ": " << ERR_INSUFFICIENT_MEMORY << std::endl;
         javaCb.onFinished(ss.str());
-        return;
-    }
-
-    listener->setLogger(verbosity, &javaCb);
-    if (!listener->onLog) {
-        std::stringstream ss;
-        ss << ERR_MESSAGE << ERR_CODE_INSUFFICIENT_MEMORY << ": " << ERR_INSUFFICIENT_MEMORY << std::endl;
-        javaCb.onFinished(ss.str());
+        delete listenerHandler;
+        listenerHandler = nullptr;
         return;
     }
 
     std::stringstream ss;
-    ss << "Listening, Region "
+    ss << "Listening, region "
        << memSetupMemGatewaySettingsStorage[regionIdx].name << std::endl;
-    listener->onLog->onInfo(listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
+    javaCb.onInfo(listenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
 
-    listener->onLog->onInfo(listener, LOG_INFO, LOG_MAIN_FUNC, 0, "Start listen");
     int flags = FLAG_GATEWAY_LISTENER_NO_SEND | FLAG_GATEWAY_LISTENER_NO_BEACON;
-    int r = listener->listen(&gwSettings, flags);
-    listener->onLog->onInfo(listener, LOG_INFO, LOG_MAIN_FUNC, 0, "Stop listen");
+    int r = listenerHandler->listener->listen(&gwSettings, flags);
+    javaCb.onInfo(listenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, "Stop listen");
 
-    if (r && listener->onLog) {
+    if (r) {
         std::stringstream ss;
         ss << ERR_MESSAGE << r << ": " << strerror_lorawan_ns(r) << std::endl;
-        listener->onLog->onInfo(listener, LOG_ERR, LOG_MAIN_FUNC, r, ss.str());
-    }
-    delete libLoragwHelper.onOpenClose;
-    libLoragwHelper.onOpenClose = nullptr;
-
-    if (listener) {
-        delete listener;
-        listener = nullptr;
-    }
-    if (identityService) {
-        delete identityService;
-        identityService = nullptr;
-    }
-    javaCb.onFinished(std::basic_string<char, std::char_traits<char>, std::allocator<char>>());
-}
-
-/**
- * @param env
- * @param jStr
- * @return string
- * @see https://stackoverflow.com/questions/41820039/jstringjni-to-stdstringc-with-utf8-characters
- */
-static std::string jstring2string(
-    JNIEnv *env,
-    jstring jStr
-) {
-    if (!jStr)
-        return "";
-
-    const jclass stringClass = env->GetObjectClass(jStr);
-    const jmethodID getBytes = env->GetMethodID(stringClass, "getBytes", "(Ljava/lang/String;)[B");
-    const jbyteArray stringJbytes = (jbyteArray) env->CallObjectMethod(jStr, getBytes, env->NewStringUTF("UTF-8"));
-
-    size_t length = (size_t) env->GetArrayLength(stringJbytes);
-    jbyte* pBytes = env->GetByteArrayElements(stringJbytes, nullptr);
-
-    std::string ret = std::string((char *)pBytes, length);
-    env->ReleaseByteArrayElements(stringJbytes, pBytes, JNI_ABORT);
-
-    env->DeleteLocalRef(stringJbytes);
-    env->DeleteLocalRef(stringClass);
-    return ret;
+        javaCb.onInfo(listenerHandler->listener, LOG_ERR, LOG_MAIN_FUNC, r, ss.str());
+    } else
+        javaCb.onFinished("Successfully finished");
+    delete listenerHandler;
+    listenerHandler = nullptr;
 }
 
 static std::thread *gwThread = nullptr;
@@ -435,12 +459,9 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_stop(
 )
 {
     JavaLGWEvent javaLog;
-    if (!gwThread)
+    if (!listenerHandler)
         javaLog.onInfo(nullptr, LOG_ERR, LOG_USB_ANDROID, ERR_CODE_FAIL_IDENTITY_SERVICE, "Already stopped" );
-    if (!loggerObject || !android_LGW_onInfo)
-        return;
-    if (!env)
-        return;
+    listenerHandler->listener->clear();
 }
 
 extern "C" JNIEXPORT jobjectArray JNICALL

@@ -53,8 +53,8 @@ public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdap
         if (mAddressSelection != null) {
             final RecyclerView.ViewHolder holder = new GatewayEventAdapter.ViewHolder(view);
             view.setOnClickListener(view1 -> {
-                final int position = holder.getBindingAdapterPosition();
-                mAddressSelection.onSelect(position);
+                final long id = holder.getBindingAdapter().getItemId(holder.getBindingAdapterPosition());
+                mAddressSelection.onSelect(id);
             });
         }
         return new ViewHolder(view);

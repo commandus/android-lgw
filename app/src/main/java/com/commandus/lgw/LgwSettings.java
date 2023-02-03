@@ -17,6 +17,7 @@ public class LgwSettings {
     public static final String INTENT_ACTION_DISCONNECT = APPLICATION_ID + ".Disconnect";
     private static final String PREF_THEME = "theme";
     private static final String PREF_REGION_INDEX = "region_index";
+    private static final String PREF_LOAD_LAST_URI = "load_last_uri";
 
     private static LgwSettings mLgwSettings = null;
     private final Context mContext;
@@ -24,6 +25,8 @@ public class LgwSettings {
     private String mTheme; // light|dark
     private int mRegionIndex;
     private int mVerbosity = 7;
+
+    private String mLoadLastUri;
 
     public String getTheme() {
         return mTheme;
@@ -33,6 +36,7 @@ public class LgwSettings {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
         mTheme = prefs.getString(PREF_THEME, "dark");
         mRegionIndex = prefs.getInt(PREF_REGION_INDEX, 0);
+        mLoadLastUri = prefs.getString(PREF_LOAD_LAST_URI, "");
     }
 
     public LgwSettings(Context context) {
@@ -46,7 +50,7 @@ public class LgwSettings {
 
         editor.putString(PREF_THEME, mTheme);
         editor.putInt(PREF_REGION_INDEX, mRegionIndex);
-
+        editor.putString(PREF_LOAD_LAST_URI, mLoadLastUri);
         editor.apply();
     }
 
@@ -71,5 +75,9 @@ public class LgwSettings {
 
     public int getVerbosity() {
         return mVerbosity;
+    }
+
+    public String getLoadLastUri() {
+        return mLoadLastUri;
     }
 }

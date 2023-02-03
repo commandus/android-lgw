@@ -36,4 +36,8 @@
     <string name="msg_finished">Finished </string>
     <string name="msg_connecting_usb_serial_port">Connecting USB serial port..</string>
     <string name="err_open_serial_port">Error open serial port: </string>
+    <string name="label_load">Load</string>
+    <string name="label_share">Share</string>
+    <string name="enter_uri_dialog_title">Enter URL</string>
+    <string name="load">Load</string>
 </resources>

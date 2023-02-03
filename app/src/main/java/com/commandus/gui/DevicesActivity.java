@@ -4,6 +4,7 @@ import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -17,9 +18,12 @@ public class DevicesActivity extends AppCompatActivity {
     private AppBarConfiguration appBarConfiguration;
     private ActivityDevicesBinding binding;
 
+    private AddressItemViewModel addressItemViewModel;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        addressItemViewModel = new ViewModelProvider(this).get(AddressItemViewModel.class);
 
         binding = ActivityDevicesBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());

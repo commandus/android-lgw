@@ -12,6 +12,10 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.text.TextUtils;
 
+import com.commandus.lgw.DevEUI;
+import com.commandus.lgw.KEY128;
+import com.commandus.lgw.LoraDeviceAddress;
+
 import java.util.HashMap;
 
 public class DeviceAddressProvider extends ContentProvider {
@@ -21,12 +25,12 @@ public class DeviceAddressProvider extends ContentProvider {
     // parsing the content URI
     public static final Uri CONTENT_URI = Uri.parse(URL);
 
-    static final String FN_ID = "id";
-    static final String FN_ADDRESS = "address";
-    static final String FN_EUI = "eui";
-    static final String FN_NWKSKEY = "nwkSKey";
-    static final String FN_APPSKEY = "appSKey";
-    static final String FN_NAME = "name";
+    public static final String FN_ID = "id";
+    public static final String FN_ADDRESS = "address";
+    public static final String FN_EUI = "eui";
+    public static final String FN_NWKSKEY = "nwkSKey";
+    public static final String FN_APPSKEY = "appSKey";
+    public static final String FN_NAME = "name";
 
     public static final int F_ID = 0;
     public static final int F_ADDRESS = 1;
@@ -70,7 +74,6 @@ public class DeviceAddressProvider extends ContentProvider {
     static private final String SQL_DROP_INDEX_1 = "DROP INDEX IF EXISTS idx_name";
     static private final String SQL_DROP_INDEX_2 = "DROP INDEX IF EXISTS idx_address";
     static private HashMap<String, String> PROJECTION_MAP;
-
 
     // creating a database
     private static class DatabaseHelper extends SQLiteOpenHelper {
@@ -192,12 +195,64 @@ public class DeviceAddressProvider extends ContentProvider {
 
     public static int count(Context context) {
         DatabaseHelper dbHelper = new DatabaseHelper(context);
-        SQLiteDatabase dbCount = dbHelper.getWritableDatabase();
+        SQLiteDatabase dbCount = dbHelper.getReadableDatabase();
         Cursor mCount= dbCount.rawQuery("SELECT count(*) FROM " + TABLE_NAME, null);
         mCount.moveToFirst();
         int r =  mCount.getInt(0);
         mCount.close();
         return r;
+    }
+
+    public static LoraDeviceAddress getById(Context context, long id) {
+        DatabaseHelper dbHelper = new DatabaseHelper(context);
+        SQLiteDatabase dbCount = dbHelper.getReadableDatabase();
+        Cursor mGet = dbCount.rawQuery("SELECT " + FN_ID + ", " + FN_ADDRESS + ", "
+                + FN_EUI + ", " + FN_NWKSKEY + ", " + FN_APPSKEY+ ", " + FN_NAME
+                + " FROM " + TABLE_NAME + " WHERE " + FN_ID + " = ? ",
+                new String[]{Long.toString(id)});
+        if (!mGet.moveToFirst())
+            return null;
+        LoraDeviceAddress r = new LoraDeviceAddress(
+            mGet.getInt(F_ID),
+            mGet.getString(F_ADDRESS),
+            mGet.getString(F_ADDRESS),
+            mGet.getString(F_NWKSKEY),
+            mGet.getString(F_APPSKEY),
+            mGet.getString(F_NAME)
+        );
+        mGet.close();
+        return r;
+    }
+
+    public static void add(Context context, LoraDeviceAddress address) {
+        DatabaseHelper dbHelper = new DatabaseHelper(context);
+        SQLiteDatabase dbCount = dbHelper.getWritableDatabase();
+        Cursor mGet = dbCount.rawQuery("INSERT INTO " + TABLE_NAME + " ("
+            + FN_ADDRESS + ", " + FN_EUI + ", " + FN_NWKSKEY + ", " + FN_APPSKEY + ", " + FN_NAME
+            + ") VALUES(?, ?, ?, ?, ?)",
+            new String[]{address.addr, address.eui.toString(),
+                address.nwkSKey.toString(), address.appSKey.toString(), address.name});
+        mGet.close();
+    }
+
+    public static void update(Context context, LoraDeviceAddress address) {
+        if (address.id == 0) {
+            add(context, address);
+            return;
+        }
+        DatabaseHelper dbHelper = new DatabaseHelper(context);
+        SQLiteDatabase dbCount = dbHelper.getWritableDatabase();
+        Cursor mUpd = dbCount.rawQuery("UPDATE " + TABLE_NAME
+            + " SET " + FN_ADDRESS
+            + " = ?, SET " + FN_EUI
+            + " = ?, SET " + FN_NWKSKEY
+            + " = ?, SET " + FN_APPSKEY
+            + " = ?, SET " + FN_NAME
+            + " WHERE " + FN_ID + " = ?",
+                new String[]{address.addr, address.eui.toString(), address.nwkSKey.toString(),
+                        address.appSKey.toString(), address.name, Long.toString(address.id)
+        });
+        mUpd.close();
     }
 
 }

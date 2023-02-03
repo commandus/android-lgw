@@ -5,7 +5,7 @@
     android:id="@+id/layoutMain"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context="com.commandus.gui.MainActivity">
 
     <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/layoutEx"

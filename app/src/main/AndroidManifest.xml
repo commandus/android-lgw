@@ -30,8 +30,8 @@
         </activity>
 
         <provider
-            android:name="com.commandus.gui.DeviceAddressProvider"
-            android:authorities="device.lora"
+            android:name=".DeviceAddressProvider"
+            android:authorities="lora"
             android:enabled="true"
             android:exported="true" />
 

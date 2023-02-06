@@ -24,11 +24,21 @@ public class HexBytes {
         StringBuilder builder = new StringBuilder(value.length * 8);
         for (byte b : value) {
             String hex = Integer.toHexString(b);
-            while (hex.length() < 2){
+            if (hex.length() < 2)   // actually 1
                 builder.append("0");
-            }
             builder.append(hex);
         }
         return builder.toString();
     }
+
+    public boolean empty() {
+        if (value != null) {
+            for (byte b : value) {
+                if (b != 0)
+                    return false;
+            }
+        }
+        return true;
+    }
+
 }

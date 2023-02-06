@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 
+import com.commandus.lgw.DeviceAddressProvider;
 import com.commandus.lgw.LoraDeviceAddress;
 import com.commandus.lgw.R;
 import com.commandus.lgw.databinding.FragmentAddressItemBinding;
@@ -38,7 +39,7 @@ public class AddressItemFragment extends Fragment {
         LoraDeviceAddress selected = addressItemViewModel.getSelectedAddress().getValue();
         if (selected != null) {
             binding.editTextAddress.setText(selected.addr.toString());
-            binding.editTextEUI.setText(selected.eui.toString());
+            binding.editTextEUI.setText(selected.devEui.toString());
             binding.editTextNwkSKey.setText(selected.nwkSKey.toString());
             binding.editTextAppSKey.setText(selected.appSKey.toString());
             binding.editTextName.setText(selected.name);

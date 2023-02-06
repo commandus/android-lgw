@@ -22,6 +22,7 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.commandus.lgw.DeviceAddressProvider;
 import com.commandus.lgw.DeviceAddresses;
 import com.commandus.lgw.LGWListener;
 import com.commandus.lgw.LgwSettings;

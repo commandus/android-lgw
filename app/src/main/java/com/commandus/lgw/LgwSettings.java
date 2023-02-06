@@ -18,6 +18,7 @@ public class LgwSettings {
     private static final String PREF_THEME = "theme";
     private static final String PREF_REGION_INDEX = "region_index";
     private static final String PREF_LOAD_LAST_URI = "load_last_uri";
+    private static final String PREF_SHARE_LAST_URI = "share_last_uri";
 
     private static LgwSettings mLgwSettings = null;
     private final Context mContext;
@@ -27,6 +28,7 @@ public class LgwSettings {
     private int mVerbosity = 7;
 
     private String mLoadLastUri;
+    private String mShareLastUri;
 
     public String getTheme() {
         return mTheme;
@@ -37,6 +39,7 @@ public class LgwSettings {
         mTheme = prefs.getString(PREF_THEME, "dark");
         mRegionIndex = prefs.getInt(PREF_REGION_INDEX, 0);
         mLoadLastUri = prefs.getString(PREF_LOAD_LAST_URI, "");
+        mShareLastUri = prefs.getString(PREF_LOAD_LAST_URI, "");
     }
 
     public LgwSettings(Context context) {
@@ -51,6 +54,7 @@ public class LgwSettings {
         editor.putString(PREF_THEME, mTheme);
         editor.putInt(PREF_REGION_INDEX, mRegionIndex);
         editor.putString(PREF_LOAD_LAST_URI, mLoadLastUri);
+        editor.putString(PREF_SHARE_LAST_URI, mShareLastUri);
         editor.apply();
     }
 
@@ -79,5 +83,16 @@ public class LgwSettings {
 
     public String getLoadLastUri() {
         return mLoadLastUri;
+    }
+    public String getShareLastUri() {
+        return mShareLastUri;
+    }
+
+    public void setLoadLastUri(String value) {
+        mLoadLastUri = value;
+    }
+
+    public void setShareLastUri(String value) {
+        mShareLastUri = value;
     }
 }

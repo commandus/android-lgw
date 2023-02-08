@@ -421,6 +421,7 @@ static void run(
     std::stringstream ss;
     ss << "Listening, region "
        << memSetupMemGatewaySettingsStorage[regionIdx].name << std::endl;
+
     javaCb.onInfo(listenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
 
     int flags = FLAG_GATEWAY_LISTENER_NO_SEND | FLAG_GATEWAY_LISTENER_NO_BEACON;
@@ -461,7 +462,8 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_stop(
     JavaLGWEvent javaLog;
     if (!listenerHandler)
         javaLog.onInfo(nullptr, LOG_ERR, LOG_USB_ANDROID, ERR_CODE_FAIL_IDENTITY_SERVICE, "Already stopped" );
-    listenerHandler->listener->clear();
+    else
+        listenerHandler->listener->clear();
 }
 
 extern "C" JNIEXPORT jobjectArray JNICALL

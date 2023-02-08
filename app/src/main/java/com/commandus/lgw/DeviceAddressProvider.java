@@ -199,13 +199,14 @@ public class DeviceAddressProvider extends ContentProvider {
         cursorCount.moveToFirst();
         int r =  cursorCount.getInt(0);
         cursorCount.close();
+        dbCount.close();
         return r;
     }
 
     public static LoraDeviceAddress getById(Context context, long id) {
         DatabaseHelper dbHelper = new DatabaseHelper(context);
-        SQLiteDatabase dbCount = dbHelper.getReadableDatabase();
-        Cursor cursor = dbCount.rawQuery("SELECT " + FN_ID + ", " + FN_ADDR + ", "
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT " + FN_ID + ", " + FN_ADDR + ", "
                 + FN_DEVEUI + ", " + FN_NWKSKEY + ", " + FN_APPSKEY+ ", " + FN_NAME
                 + " FROM " + TABLE_NAME + " WHERE " + FN_ID + " = ? ",
                 new String[]{Long.toString(id)});
@@ -220,17 +221,15 @@ public class DeviceAddressProvider extends ContentProvider {
             cursor.getString(F_NAME)
         );
         cursor.close();
+        db.close();
         return r;
     }
 
     public static void add(Context context, LoraDeviceAddress address) {
         DatabaseHelper dbHelper = new DatabaseHelper(context);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.execSQL("INSERT INTO " + TABLE_NAME + " ("
-            + FN_ADDR + ", " + FN_DEVEUI + ", " + FN_NWKSKEY + ", " + FN_APPSKEY + ", " + FN_NAME
-            + ") VALUES(?, ?, ?, ?, ?)",
-            new String[]{address.addr, address.devEui.toString(),
-                address.nwkSKey.toString(), address.appSKey.toString(), address.name});
+        db.insert(TABLE_NAME, FN_ID, address.getContentValues());
+        db.close();
     }
 
     public static void rm(Context context, long id) {
@@ -238,12 +237,14 @@ public class DeviceAddressProvider extends ContentProvider {
         DatabaseHelper dbHelper = new DatabaseHelper(context);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.delete(TABLE_NAME, FN_ID + " = ?", new String[]{Long.toString(id)});
+        db.close();
     }
 
     public static void clear(Context context) {
         DatabaseHelper dbHelper = new DatabaseHelper(context);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.delete(TABLE_NAME,null, null);
+        db.close();
     }
 
     public static void update(Context context, LoraDeviceAddress address) {
@@ -255,6 +256,7 @@ public class DeviceAddressProvider extends ContentProvider {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.update(TABLE_NAME, address.getContentValues(), FN_ID + " = ?",
                 new String[]{ Long.toString(address.id)});
+        db.close();
     }
 
 }

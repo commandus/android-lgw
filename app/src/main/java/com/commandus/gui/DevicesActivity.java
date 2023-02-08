@@ -4,7 +4,7 @@ import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.lifecycle.ViewModelProvider;
+import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -17,28 +17,37 @@ public class DevicesActivity extends AppCompatActivity {
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityDevicesBinding binding;
+    private NavController navController;
 
-    private AddressItemViewModel addressItemViewModel;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        addressItemViewModel = new ViewModelProvider(this).get(AddressItemViewModel.class);
 
         binding = ActivityDevicesBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         setSupportActionBar(binding.toolbar);
         Toolbar toolbar = binding.toolbar;
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_devices);
+        navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_devices);
         appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
     }
 
     @Override
     public boolean onSupportNavigateUp() {
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_devices);
+        navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_devices);
         return NavigationUI.navigateUp(navController, appBarConfiguration)
                 || super.onSupportNavigateUp();
+    }
+
+    @Override
+    public void onBackPressed() {
+        Fragment fragmentList = getSupportFragmentManager().findFragmentById(R.id.DeviceListFragment);
+        if (fragmentList != null && fragmentList.isVisible()) {
+            // add your code here
+            finish();
+        } else {
+            super.onBackPressed();
+        }
     }
 }

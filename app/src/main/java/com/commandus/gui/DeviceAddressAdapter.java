@@ -17,23 +17,34 @@ public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdap
 
     private final RecyclerView recyclerView;
     private final Cursor mCursor;
-    private final AddressSelection mAddressSelection;
+    protected final AddressSelection mAddressSelection;
 
     /**
      * Provide a reference to the type of views that you are using
      * (custom ViewHolder)
      */
-    public static class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder
+            implements View.OnClickListener {
         private final TextView textView;
+        public long id;
 
         public ViewHolder(View view) {
             super(view);
             // Define click listener for the ViewHolder's View
-            textView = view.findViewById(R.id.textViewGatewayEvent);
+            textView = view.findViewById(R.id.textViewListItemAddress);
+            view.setOnClickListener(this);
         }
 
-        public TextView getTextView() {
-            return textView;
+        @Override
+        public void onClick(View view) {
+            DeviceAddressAdapter adapter = (DeviceAddressAdapter) getBindingAdapter();
+            if (adapter != null)
+                adapter.mAddressSelection.onSelect(id);
+        }
+
+        public void set(int position, long id, String name) {
+            this.id = id;
+            textView.setText(name);
         }
     }
 
@@ -50,13 +61,9 @@ public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdap
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
         View view = LayoutInflater.from(viewGroup.getContext())
-                .inflate(R.layout.gateway_event_list_item, viewGroup, false);
+                .inflate(R.layout.address_list_item, viewGroup, false);
         if (mAddressSelection != null) {
-            final RecyclerView.ViewHolder holder = new GatewayEventAdapter.ViewHolder(view);
-            view.setOnClickListener(view1 -> {
-                final long id = holder.getBindingAdapter().getItemId(holder.getBindingAdapterPosition());
-                mAddressSelection.onSelect(id);
-            });
+            final RecyclerView.ViewHolder holder = new DeviceAddressAdapter.ViewHolder(view);
         }
         return new ViewHolder(view);
     }
@@ -67,7 +74,7 @@ public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdap
         // Get element from your dataset at this position and replace the
         // contents of the view with that element
         mCursor.moveToPosition(position);
-        viewHolder.getTextView().setText(mCursor.getString(DeviceAddressProvider.F_NAME));
+        viewHolder.set(position, mCursor.getLong(DeviceAddressProvider.F_ID), mCursor.getString(DeviceAddressProvider.F_NAME));
     }
 
     // Return the size of your dataset (invoked by the layout manager)

@@ -39,7 +39,8 @@ public class AddressLoader {
                             }
                         }
                         reader.endObject();
-                        if (!d.nwkSKey.empty() && !d.appSKey.empty())
+                        if (d.nwkSKey != null && !d.nwkSKey.empty()
+                                && d.appSKey != null && !d.appSKey.empty())
                             retVal.onAddress(d);
                     }
                     reader.endArray();

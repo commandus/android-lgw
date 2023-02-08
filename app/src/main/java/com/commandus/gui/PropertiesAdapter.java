@@ -40,10 +40,7 @@ public class PropertiesAdapter extends RecyclerView.Adapter<PropertiesAdapter.Vi
 
     public PropertiesAdapter() {
         props = new ArrayList<>();
-        props.add("-1-");
-        props.add("-2-");
-        props.add("-3-");
-        props.add("-4-");
+        props.add("Not implemented yet");
     }
 
     @NonNull

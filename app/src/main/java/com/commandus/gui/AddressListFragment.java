@@ -18,6 +18,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.commandus.lgw.AddressListResult;
@@ -34,7 +35,6 @@ public class AddressListFragment extends Fragment
         AddressSelection, AddressListResult, ConfirmationListener {
 
     private FragmentAddressListBinding binding;
-    DeviceAddressAdapter deviceAddressAdapter;
     private RecyclerView recyclerViewDeviceAddress;
     private AddressItemViewModel addressItemViewModel;
     private LgwSettings lgwSettings;
@@ -69,7 +69,7 @@ public class AddressListFragment extends Fragment
                 confirmDelete();
                 return true;
         }
-        return super.onOptionsItemSelected(item);
+        return false;
     }
 
     private void confirmDelete() {
@@ -79,11 +79,8 @@ public class AddressListFragment extends Fragment
 
     @Override
     public void confirmed() {
-        removeAll();
-    }
-
-    private void removeAll() {
         DeviceAddressProvider.clear(getContext());
+        refreshAdapter();
     }
 
     private enum AddressAction {
@@ -101,23 +98,22 @@ public class AddressListFragment extends Fragment
         binding = FragmentAddressListBinding.inflate(inflater, container, false);
         lgwSettings = LgwSettings.getSettings(getContext());
         recyclerViewDeviceAddress = binding.recyclerViewDeviceAddress;
-
-        deviceAddressAdapter = new DeviceAddressAdapter(recyclerViewDeviceAddress, (AddressSelection) this);
-        //recyclerViewDeviceAddress.setAdapter(deviceAddressAdapter);
-
+        recyclerViewDeviceAddress.setLayoutManager(new LinearLayoutManager(getContext()));
+        refreshAdapter();
         return binding.getRoot();
+    }
+
+    private void refreshAdapter() {
+        DeviceAddressAdapter deviceAddressAdapter = new DeviceAddressAdapter(recyclerViewDeviceAddress, this);
+        recyclerViewDeviceAddress.setAdapter(deviceAddressAdapter);
     }
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        addressItemViewModel = new ViewModelProvider(requireActivity()).get(AddressItemViewModel.class);
+
         MenuHost menuHost = requireActivity();
         menuHost.addMenuProvider(this, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
-
-        addressItemViewModel = new ViewModelProvider(this).get(AddressItemViewModel.class);
-
-        PropertiesAdapter testAdapter = new PropertiesAdapter();
-        recyclerViewDeviceAddress.setAdapter(testAdapter);
-
     }
 
     @Override
@@ -158,6 +154,9 @@ public class AddressListFragment extends Fragment
     @Override
     public void onDone(int status) {
         // load or save completed
+        getActivity().runOnUiThread(()-> {
+            refreshAdapter();
+        });
     }
 
     @Override
@@ -169,8 +168,10 @@ public class AddressListFragment extends Fragment
     @Override
     public void onError(String message) {
         getActivity().runOnUiThread(()->{
+            refreshAdapter();
             Toast toast = Toast.makeText(getContext(), message, Toast.LENGTH_LONG);
             toast.show();
         });
     }
+
 }

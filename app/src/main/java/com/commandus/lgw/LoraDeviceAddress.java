@@ -14,12 +14,12 @@ public class LoraDeviceAddress {
     public KEY128 appSKey;
     public String name;
 
-    public LoraDeviceAddress(long id, String addr, String devEui, String nwkSKey, String appSKay, String name) {
+    public LoraDeviceAddress(long id, String addr, String devEui, String nwkSKey, String appSKey, String name) {
         this.id = id;
         this.addr = addr;
         this.devEui = new DevEUI(devEui);
         this.nwkSKey = new KEY128(nwkSKey);
-        this.appSKey = new KEY128(appSKay);
+        this.appSKey = new KEY128(appSKey);
         this.name = name;
     }
 
@@ -32,7 +32,7 @@ public class LoraDeviceAddress {
         r.put(DeviceAddressProvider.FN_ADDR, addr);
         r.put(DeviceAddressProvider.FN_DEVEUI, devEui.toString());
         r.put(DeviceAddressProvider.FN_NWKSKEY, nwkSKey.toString());
-        r.put(DeviceAddressProvider.FN_ADDR, appSKey.toString());
+        r.put(DeviceAddressProvider.FN_APPSKEY, appSKey.toString());
         r.put(DeviceAddressProvider.FN_NAME, name);
         return r;
     }

@@ -8,6 +8,9 @@ public class HexBytes {
     }
 
     private void parseHexString(String hex, int size) {
+        if (hex == null) {
+            return;
+        }
         int bytes = hex.length();
         value = new byte[size];
         for (int i = 0; i < bytes && (i < size * 2); i++) {
@@ -21,12 +24,22 @@ public class HexBytes {
 
     @Override
     public String toString() {
+        if (value == null)
+            return "";
         StringBuilder builder = new StringBuilder(value.length * 8);
         for (byte b : value) {
             String hex = Integer.toHexString(b);
-            if (hex.length() < 2)   // actually 1
-                builder.append("0");
-            builder.append(hex);
+            int l = hex.length();
+            switch (l) {
+                case 1:
+                    builder.append("0").append(hex);
+                    break;
+                case 8:
+                    builder.append(hex.substring(6, 8));
+                    break;
+                default:
+                    builder.append(hex);
+            }
         }
         return builder.toString();
     }

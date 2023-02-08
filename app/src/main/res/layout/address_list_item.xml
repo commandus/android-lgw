@@ -5,8 +5,9 @@
     android:padding="@dimen/lgwPadding"
     android:gravity="center_vertical">
 <TextView
-    android:id="@+id/textViewGatewayEvent"
+    android:id="@+id/textViewListItemAddress"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:textSize="@dimen/lgwAddressListTextSize"
     android:text="payload"/>
 </FrameLayout>

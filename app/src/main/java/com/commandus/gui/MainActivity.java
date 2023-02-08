@@ -56,6 +56,7 @@ public class MainActivity extends AppCompatActivity
     private TextView textCountReceive;
     private TextView textCountValue;
     private RecyclerView recyclerViewLog;
+    private Button buttonDevices;
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
@@ -111,20 +112,13 @@ public class MainActivity extends AppCompatActivity
          */
 
         buttonRegion = binding.buttonRegion;
-        Button buttonDevices = binding.buttonDevices;
+        buttonDevices = binding.buttonDevices;
         switchGateway = binding.switchGateway;
         textStatusUSB = binding.textStatusUSB;
         textStatusLGW = binding.textStatusLGW;
         textCountReceive = binding.textLGWReceiveCount;
         textCountValue = binding.textLGWValueCount;
         recyclerViewLog = binding.recyclerViewLog;
-
-        DeviceAddresses deviceAddresses = new DeviceAddresses();
-        int cnt = DeviceAddressProvider.count(this);
-        if (cnt > 0)
-            buttonDevices.setText(getString(R.string.label_button_device_count) + cnt);
-        else
-            buttonDevices.setText(R.string.label_button_devices);
 
         buttonDevices.setOnClickListener(view -> {
             Intent intent = new Intent(MainActivity.this, DevicesActivity.class);
@@ -204,6 +198,13 @@ public class MainActivity extends AppCompatActivity
         f.addAction(ACTION_USB_ATTACHED);
         f.addAction(ACTION_USB_DETACHED);
         registerReceiver(broadcastReceiver, f);
+
+        int cnt = DeviceAddressProvider.count(this);
+        if (cnt > 0)
+            buttonDevices.setText(getString(R.string.label_button_device_count) + cnt);
+        else
+            buttonDevices.setText(R.string.label_button_devices);
+
     }
 
     @Override

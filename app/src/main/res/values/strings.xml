@@ -48,4 +48,12 @@
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="msg_confirm_to_delete">Are you sure you want to delete?</string>
+    <string name="action_save_device">Save</string>
+    <string name="action_cancel_edit_device">Cancel</string>
+    <string name="action_delete_device">Delete</string>
+    <string name="label_address_item_addr">Address</string>
+    <string name="label_address_item_eui">EUI</string>
+    <string name="label_address_item_nwkskey">NwkSKey</string>
+    <string name="label_address_item_appskey">AppSKey</string>
+    <string name="label_address_item_name">Name</string>
 </resources>

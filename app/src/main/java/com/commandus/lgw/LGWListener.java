@@ -13,4 +13,13 @@ public interface LGWListener {
     int onSetAttr(
             boolean blocking
     );
+
+    /**
+     * return device identifier by the address
+     * @param devAddr
+     * @return null if not found
+     */
+    LoraDeviceAddress onIdentityGet(String devAddr);
+    LoraDeviceAddress onHetNetworkIdentity(String devEui);
+    int onIdentitySize();
 }

@@ -7,29 +7,12 @@
 #include <vector>
 
 #include "identity-service.h"
+#include "log-intf.h"
 
 class AndroidIdentityService: public IdentityService {
 private:
-    int load();
-    int save();
-    std::mutex mutexMap;
-    // assigned addresses
-    std::map<DEVADDRINT, DEVICEID, DEVADDRINTCompare> storage;
-    // devices which has special rights
-    std::map<DEVADDRINT, uint32_t, DEVADDRINTCompare> rightsMask;
-    std::string path;
-
-    void clear();
-    /**
-      * Return next network address if available
-      * @return 0- success, ERR_ADDR_SPACE_FULL- no address available
-      */
-    int nextBruteForce(NetworkIdentity &retval);
+    LogIntf *androidCb;
 public:
-    // helper data
-    // helps to find out free address in the space
-    uint32_t maxDevNwkAddr;
-
     AndroidIdentityService();
     ~AndroidIdentityService();
     int get(DeviceId &retval, DEVADDR &devaddr) override;
@@ -38,10 +21,19 @@ public:
     void list(std::vector<NetworkIdentity> &retval, size_t offset, size_t size) override;
     // Entries count
     size_t size() override;
+    // No implementation required
     void put(DEVADDR &devaddr, DEVICEID &id) override;
+    // No implementation required
     void rm(DEVADDR &addr) override;
 
+    /**
+     * Set Android callbacks
+     * @param option not used
+     * @param data LogIntf*
+     * @return 0 always
+     */
     int init(const std::string &option, void *data) override;
+    // No implementation required
     void flush() override;
     void done() override;
     int parseIdentifiers(
@@ -54,6 +46,7 @@ public:
         const std::vector<std::string> &list,
         bool useRegex
     ) override;
+    // Always false
     bool canControlService(
         const DEVADDR &addr
     ) override;

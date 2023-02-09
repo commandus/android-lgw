@@ -26,6 +26,7 @@ import com.commandus.lgw.DeviceAddressProvider;
 import com.commandus.lgw.DeviceAddresses;
 import com.commandus.lgw.LGWListener;
 import com.commandus.lgw.LgwSettings;
+import com.commandus.lgw.LoraDeviceAddress;
 import com.commandus.lgw.Payload;
 import com.commandus.lgw.R;
 import com.commandus.lgw.databinding.ActivityMainBinding;
@@ -289,6 +290,24 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public int onSetAttr(boolean blocking) {
+        return 0;
+    }
+
+    @Override
+    public LoraDeviceAddress onIdentityGet(String devAddr) {
+        // not used
+        return null;
+    }
+
+    @Override
+    public LoraDeviceAddress onHetNetworkIdentity(String devEui) {
+        // not used
+        return null;
+    }
+
+    @Override
+    public int onIdentitySize() {
+        // not used
         return 0;
     }
 

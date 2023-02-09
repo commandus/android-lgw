@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -12,17 +11,15 @@ import android.provider.Settings;
 
 import androidx.annotation.Nullable;
 
+import com.commandus.lgw.DeviceAddressProvider;
 import com.commandus.lgw.LGW;
 import com.commandus.lgw.LGWListener;
+import com.commandus.lgw.LoraDeviceAddress;
 import com.commandus.lgw.Payload;
 import com.commandus.lgw.R;
 import com.commandus.serial.SerialErrorListener;
 import com.commandus.serial.SerialPort;
 import com.commandus.serial.SerialSocket;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.util.Date;
 
 /**
  * create notification and queue serial data while activity is not in the foreground
@@ -218,6 +215,43 @@ public class LGWService extends Service implements
     ) {
         usbSerialSocket.setBlocking(blocking);
         return 0;
+    }
+
+    @Override
+    public LoraDeviceAddress onIdentityGet(String devAddr) {
+        LoraDeviceAddress r = DeviceAddressProvider.getByAddress(this, devAddr);
+        synchronized (this) {
+            mainLooper.post(() -> {
+                if (listener != null) {
+                    if (r != null)
+                        listener.onInfo("== GET ADDR " + devAddr + " " + r.toString());
+                    else
+                        listener.onInfo("== GET ADDR ERROR " + devAddr);
+                }
+            });
+        }
+        return r;
+    }
+
+    @Override
+    public LoraDeviceAddress onHetNetworkIdentity(String devEui) {
+        LoraDeviceAddress r = DeviceAddressProvider.getByDevEui(this, devEui);
+        synchronized (this) {
+            mainLooper.post(() -> {
+                if (listener != null) {
+                    if (r != null)
+                        listener.onInfo("== GET EUI " + devEui + " " + r.toString());
+                    else
+                        listener.onInfo("== GET EUI ERROR " + devEui);
+                }
+            });
+        }
+        return r;
+    }
+
+    @Override
+    public int onIdentitySize() {
+        return DeviceAddressProvider.count(this);
     }
 
     @Override

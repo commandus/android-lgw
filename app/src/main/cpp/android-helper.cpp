@@ -15,6 +15,7 @@
 #include "gateway_usb_conf.cpp"
 #include "AndroidIdentityService.h"
 
+/*
 static void append2logfile(const char *fmt) {
     __android_log_print(ANDROID_LOG_DEBUG, "append2logfile", "%s", fmt);
     FILE *f = fopen("/storage/emulated/0/Android/data/com.commandus.lgw/files/Documents/lgw_com.log", "a+");
@@ -23,8 +24,10 @@ static void append2logfile(const char *fmt) {
         fclose(f);
     }
 }
+ */
 
 /**
+ * Java string to std::string
  * @param env
  * @param jStr
  * @return string
@@ -69,9 +72,11 @@ static jmethodID android_LGW_onFinished = nullptr;
 static jmethodID android_LGW_onRead = nullptr;
 static jmethodID android_LGW_onWrite = nullptr;
 static jmethodID android_LGW_onSetAttr = nullptr;
-static jmethodID android_LGW_open = nullptr;
-static jmethodID android_LGW_close = nullptr;
 static jmethodID payloadCnstr = nullptr;
+// identity callbacks
+static jmethodID android_LGW_onIdentitySize = nullptr;
+static jmethodID android_LGW_onIdentityGet = nullptr;
+static jmethodID android_LGW_onIdentityGetNetworkIdentity = nullptr;
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     jVM = vm;
@@ -105,8 +110,10 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_setPayloadListener(
         android_LGW_onRead = env->GetMethodID(loggerCls, "onRead", "(I)[B");
         android_LGW_onWrite = env->GetMethodID(loggerCls, "onWrite", "([B)I");
         android_LGW_onSetAttr = env->GetMethodID(loggerCls, "onSetAttr", "(Z)I");
-        android_LGW_open = nullptr;
-        android_LGW_close = nullptr;
+        android_LGW_onIdentitySize = env->GetMethodID(loggerCls, "onIdentitySize", "()I");
+        android_LGW_onIdentityGet = env->GetMethodID(loggerCls, "onIdentityGet", "(Ljava/lang/String;)Lcom/commandus/lgw/LoraDeviceAddress;");
+        android_LGW_onIdentityGetNetworkIdentity = env->GetMethodID(loggerCls, "onHetNetworkIdentity", "(Ljava/lang/String;)Lcom/commandus/lgw/LoraDeviceAddress;");
+
         payloadCnstr = env->GetMethodID(payloadCls, "<init>", "(Ljava/lang/String;IIF)V");
     } else {
         if (loggerObject) {
@@ -130,8 +137,10 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_setPayloadListener(
         android_LGW_onWrite = nullptr;
         android_LGW_onSetAttr = nullptr;
 
-        android_LGW_open = nullptr;
-        android_LGW_close = nullptr;
+        android_LGW_onIdentitySize = nullptr;
+        android_LGW_onIdentityGet = nullptr;
+        android_LGW_onIdentityGetNetworkIdentity = nullptr;
+
         payloadCnstr = nullptr;
     }
 }
@@ -193,18 +202,18 @@ static LibLoragwHelper libLoragwHelper;
 class JavaLGWEvent: public LogIntf {
 public:
     void onInfo(
-            void *env,
-            int level,
-            int moduleCode,
-            int errorCode,
-            const std::string &message
+        void *env,
+        int level,
+        int moduleCode,
+        int errorCode,
+        const std::string &message
     ) override {
         __android_log_print(ANDROID_LOG_DEBUG, "loraGatewayListener", "%s", message.c_str());
         printf_c1(message.c_str());
     }
 
     void onConnected(
-            bool connected
+        bool connected
     ) override
     {
         if (!loggerObject || !android_LGW_onConnected)
@@ -315,6 +324,159 @@ public:
         if (requireDetach)
             jVM->DetachCurrentThread();
     }
+
+    /**
+     * Get device EUI, name, keys by tha address
+     * @param retVal return valus
+     * @param devaddr device address
+     * @return 0- success, ERR_CODE_DEVICE_ADDRESS_NOTFOUND- device is not registered
+     */
+    int identityGet(DeviceId &retVal, DEVADDR &devaddr)
+    {
+        if (!loggerObject || !android_LGW_onValue)
+            return 0;
+        bool requireDetach;
+        JNIEnv *jEnv = getJavaEnv(requireDetach);
+        if (!jEnv)
+            return 0;
+        std::string a = DEVADDR2string(devaddr);
+        jstring ja = jEnv->NewStringUTF(a.c_str());
+        jobject r = jEnv->CallObjectMethod(loggerObject, android_LGW_onIdentityGet, ja);
+        if (!r)
+            return ERR_CODE_DEVICE_ADDRESS_NOTFOUND;
+
+        jclass jLoraAddressCls = jEnv->GetObjectClass(r);
+
+        // String addr not used
+        // jfieldID jfAddr = jEnv->GetFieldID(jLoraAddressCls,"addr", "Ljava/lang/String;");
+        // jstring jsAddr = (jstring) jEnv->GetObjectField(r, jfAddr);
+
+        // DevEUI devEui;
+        jfieldID jfDevEui = jEnv->GetFieldID(jLoraAddressCls,"devEui", "Lcom/commandus/lgw/DevEUI;");
+        jobject joDevEui = jEnv->GetObjectField(r, jfDevEui);
+        jclass jDevEUICls = jEnv->GetObjectClass(joDevEui);
+        const jmethodID jmDevEuiToString = jEnv->GetMethodID(jDevEUICls, "toString", "()Ljava/lang/String;");
+        jstring jsDevEui = static_cast<jstring>(jEnv->CallObjectMethod(joDevEui, jmDevEuiToString));
+        retVal.setName(jstring2string(jEnv, jsDevEui));
+        jEnv->DeleteLocalRef(joDevEui);
+        jEnv->DeleteLocalRef(jsDevEui);
+
+        // KEY128 nwkSKey
+        jfieldID jfNwkSKey = jEnv->GetFieldID(jLoraAddressCls,"nwkSKey", "Lcom/commandus/lgw/KEY128;");
+        jobject joNwkSKey = jEnv->GetObjectField(r, jfNwkSKey);
+        jclass jNwkSKeyCls = jEnv->GetObjectClass(joNwkSKey);
+        const jmethodID jmNwkSKeyToString = jEnv->GetMethodID(jNwkSKeyCls, "toString", "()Ljava/lang/String;");
+        jstring jsNwkSKey = static_cast<jstring>(jEnv->CallObjectMethod(joNwkSKey, jmNwkSKeyToString));
+        retVal.setNwkSKeyString(jstring2string(jEnv, jsNwkSKey));
+        jEnv->DeleteLocalRef(joNwkSKey);
+        jEnv->DeleteLocalRef(jsNwkSKey);
+
+        // KEY128 appSKey
+        jfieldID jfAppSKey = jEnv->GetFieldID(jLoraAddressCls,"appSKey", "Lcom/commandus/lgw/KEY128;");
+        jobject joAppSKey = jEnv->GetObjectField(r, jfAppSKey);
+        jclass jAppSKeyCls = jEnv->GetObjectClass(joAppSKey);
+        const jmethodID jmAppSKeyToString = jEnv->GetMethodID(jAppSKeyCls, "toString", "()Ljava/lang/String;");
+        jstring jsAppSKey = static_cast<jstring>(jEnv->CallObjectMethod(joAppSKey, jmAppSKeyToString));
+        retVal.setAppSKeyString(jstring2string(jEnv, jsAppSKey));
+        jEnv->DeleteLocalRef(joAppSKey);
+        jEnv->DeleteLocalRef(jsAppSKey);
+
+        // String name
+        jfieldID jfName = jEnv->GetFieldID(jLoraAddressCls,"name", "Ljava/lang/String;");
+        jstring jsName = (jstring) jEnv->GetObjectField(r, jfName);
+        retVal.setName(jstring2string(jEnv, jsName));
+        jEnv->DeleteLocalRef(jsName);
+
+        if (requireDetach)
+            jVM->DetachCurrentThread();
+        return 0;
+    }
+
+    /**
+     * Return device address and identity by the EUI
+     * @param retVal device address and identities
+     * @param eui device EUI
+     * @return 0- success, ERR_CODE_DEVICE_EUI_NOT_FOUND- error
+     */
+    int identityGetNetworkIdentity(NetworkIdentity &retVal, const DEVEUI &eui)
+    {
+        if (!loggerObject || !android_LGW_onValue)
+            return 0;
+        bool requireDetach;
+        JNIEnv *jEnv = getJavaEnv(requireDetach);
+        if (!jEnv)
+            return 0;
+        std::string sDevEui = DEVEUI2string(eui);
+        jstring jDevEui = jEnv->NewStringUTF(sDevEui.c_str());
+        jobject r = jEnv->CallObjectMethod(loggerObject, android_LGW_onIdentityGetNetworkIdentity, jDevEui);
+        if (!r)
+            return ERR_CODE_DEVICE_EUI_NOT_FOUND;
+
+        jclass jLoraAddressCls = jEnv->GetObjectClass(r);
+
+        // String addr
+        jfieldID jfAddr = jEnv->GetFieldID(jLoraAddressCls,"addr", "Ljava/lang/String;");
+        jstring jsAddr = (jstring) jEnv->GetObjectField(r, jfAddr);
+        string2DEVADDR(retVal.devaddr, jstring2string(jEnv, jsAddr).c_str());
+        jEnv->DeleteLocalRef(jsAddr);
+
+        // DevEUI devEui;
+        jfieldID jfDevEui = jEnv->GetFieldID(jLoraAddressCls,"devEui", "Lcom/commandus/lgw/DevEUI;");
+        jobject joDevEui = jEnv->GetObjectField(r, jfDevEui);
+        jclass jDevEUICls = jEnv->GetObjectClass(joDevEui);
+        const jmethodID jmDevEuiToString = jEnv->GetMethodID(jDevEUICls, "toString", "()Ljava/lang/String;");
+        jstring jsDevEui = static_cast<jstring>(jEnv->CallObjectMethod(joDevEui, jmDevEuiToString));
+        string2DEVEUI(retVal.devEUI, jstring2string(jEnv, jsDevEui).c_str());
+        jEnv->DeleteLocalRef(joDevEui);
+        jEnv->DeleteLocalRef(jsDevEui);
+
+        // KEY128 nwkSKey
+        jfieldID jfNwkSKey = jEnv->GetFieldID(jLoraAddressCls,"nwkSKey", "Lcom/commandus/lgw/KEY128;");
+        jobject joNwkSKey = jEnv->GetObjectField(r, jfNwkSKey);
+        jclass jNwkSKeyCls = jEnv->GetObjectClass(joNwkSKey);
+        const jmethodID jmNwkSKeyToString = jEnv->GetMethodID(jNwkSKeyCls, "toString", "()Ljava/lang/String;");
+        jstring jsNwkSKey = static_cast<jstring>(jEnv->CallObjectMethod(joNwkSKey, jmNwkSKeyToString));
+        string2KEY(retVal.nwkSKey, jstring2string(jEnv, jsNwkSKey).c_str());
+        jEnv->DeleteLocalRef(joNwkSKey);
+        jEnv->DeleteLocalRef(jsNwkSKey);
+
+        // KEY128 appSKey
+        jfieldID jfAppSKey = jEnv->GetFieldID(jLoraAddressCls,"appSKey", "Lcom/commandus/lgw/KEY128;");
+        jobject joAppSKey = jEnv->GetObjectField(r, jfAppSKey);
+        jclass jAppSKeyCls = jEnv->GetObjectClass(joAppSKey);
+        const jmethodID jmAppSKeyToString = jEnv->GetMethodID(jAppSKeyCls, "toString", "()Ljava/lang/String;");
+        jstring jsAppSKey = static_cast<jstring>(jEnv->CallObjectMethod(joAppSKey, jmAppSKeyToString));
+        string2KEY(retVal.appSKey, jstring2string(jEnv, jsAppSKey).c_str());
+
+        jEnv->DeleteLocalRef(joAppSKey);
+        jEnv->DeleteLocalRef(jsAppSKey);
+
+        // String name
+        jfieldID jfName = jEnv->GetFieldID(jLoraAddressCls,"name", "Ljava/lang/String;");
+        jstring jsName = (jstring) jEnv->GetObjectField(r, jfName);
+        string2DEVICENAME(retVal.name, jstring2string(jEnv, jsName).c_str());
+        jEnv->DeleteLocalRef(jsName);
+
+        if (requireDetach)
+            jVM->DetachCurrentThread();
+        return 0;
+    }
+
+    // Entries count
+    size_t identitySize()
+    {
+        if (!loggerObject || !android_LGW_onValue)
+            return 0;
+        bool requireDetach;
+        JNIEnv *jEnv = getJavaEnv(requireDetach);
+        if (!jEnv)
+            return 0;
+        jint r = jEnv->CallIntMethod(loggerObject, android_LGW_onIdentitySize);
+
+        if (requireDetach)
+            jVM->DetachCurrentThread();
+        return r;
+    }
 };
 
 class GatewayConfigMem : public GatewaySettings {
@@ -381,6 +543,7 @@ static void run(
 
     JavaLGWEvent javaCb;
     libLoragwHelper.bind(&javaCb, listenerHandler->libLoragwOpenClose);
+    listenerHandler->identityService->init("", &javaCb);
 
     javaCb.onStarted(gatewayIdentifier,
         memSetupMemGatewaySettingsStorage[regionIdx].name, regionIdx);
@@ -401,6 +564,12 @@ static void run(
         delete listenerHandler;
         listenerHandler = nullptr;
         return;
+    }
+
+    {
+        std::stringstream ss;
+        ss << "Devices: " << listenerHandler->identityService->size();
+        javaCb.onInfo(listenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
     }
 
     GatewayConfigMem gwSettings;
@@ -424,6 +593,7 @@ static void run(
 
     javaCb.onInfo(listenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
 
+    // read only, deny send message and deny send beacon
     int flags = FLAG_GATEWAY_LISTENER_NO_SEND | FLAG_GATEWAY_LISTENER_NO_BEACON;
     int r = listenerHandler->listener->listen(&gwSettings, flags);
     javaCb.onInfo(listenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, "Stop listen");
@@ -466,6 +636,9 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_stop(
         listenerHandler->listener->clear();
 }
 
+/**
+ * Get list of regional settings names
+ */
 extern "C" JNIEXPORT jobjectArray JNICALL
 Java_com_commandus_lgw_LGW_regionNames(
     JNIEnv *env,

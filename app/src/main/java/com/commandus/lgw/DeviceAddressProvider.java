@@ -12,6 +12,8 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.text.TextUtils;
 
+import com.commandus.gui.LGWService;
+
 import java.util.HashMap;
 
 public class DeviceAddressProvider extends ContentProvider {
@@ -195,9 +197,9 @@ public class DeviceAddressProvider extends ContentProvider {
     public static int count(Context context) {
         DatabaseHelper dbHelper = new DatabaseHelper(context);
         SQLiteDatabase dbCount = dbHelper.getReadableDatabase();
-        Cursor cursorCount= dbCount.rawQuery("SELECT count(*) FROM " + TABLE_NAME, null);
+        Cursor cursorCount = dbCount.rawQuery("SELECT count(*) FROM " + TABLE_NAME, null);
         cursorCount.moveToFirst();
-        int r =  cursorCount.getInt(0);
+        int r = cursorCount.getInt(0);
         cursorCount.close();
         dbCount.close();
         return r;
@@ -219,6 +221,50 @@ public class DeviceAddressProvider extends ContentProvider {
             cursor.getString(F_NWKSKEY),
             cursor.getString(F_APPSKEY),
             cursor.getString(F_NAME)
+        );
+        cursor.close();
+        db.close();
+        return r;
+    }
+
+    public static LoraDeviceAddress getByAddress(Context context, String deviceAddress) {
+        DatabaseHelper dbHelper = new DatabaseHelper(context);
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT " + FN_ID + ", " + FN_ADDR + ", "
+                        + FN_DEVEUI + ", " + FN_NWKSKEY + ", " + FN_APPSKEY+ ", " + FN_NAME
+                        + " FROM " + TABLE_NAME + " WHERE " + FN_ADDR + " = ? ",
+                new String[]{ deviceAddress.toLowerCase() });
+        if (!cursor.moveToFirst())
+            return null;
+        LoraDeviceAddress r = new LoraDeviceAddress(
+                cursor.getInt(F_ID),
+                cursor.getString(F_ADDR),
+                cursor.getString(F_DEVEUI),
+                cursor.getString(F_NWKSKEY),
+                cursor.getString(F_APPSKEY),
+                cursor.getString(F_NAME)
+        );
+        cursor.close();
+        db.close();
+        return r;
+    }
+
+    public static LoraDeviceAddress getByDevEui(Context context, String devEui) {
+        DatabaseHelper dbHelper = new DatabaseHelper(context);
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT " + FN_ID + ", " + FN_ADDR + ", "
+                        + FN_DEVEUI + ", " + FN_NWKSKEY + ", " + FN_APPSKEY+ ", " + FN_NAME
+                        + " FROM " + TABLE_NAME + " WHERE " + FN_DEVEUI + " = ? ",
+                new String[]{ devEui.toLowerCase() });
+        if (!cursor.moveToFirst())
+            return null;
+        LoraDeviceAddress r = new LoraDeviceAddress(
+                cursor.getInt(F_ID),
+                cursor.getString(F_ADDR),
+                cursor.getString(F_DEVEUI),
+                cursor.getString(F_NWKSKEY),
+                cursor.getString(F_APPSKEY),
+                cursor.getString(F_NAME)
         );
         cursor.close();
         db.close();

@@ -23,6 +23,10 @@
 #endif
 #endif
 
+#define SWAP_BYTES_2(x) __swap16(x)
+#define SWAP_BYTES_4(x) __swap32(x)
+#define SWAP_BYTES_8(x) __swap64(x)
+
 #if BYTE_ORDER == BIG_ENDIAN
 #define NTOH2(x) (x)
 #define NTOH4(x) (x)

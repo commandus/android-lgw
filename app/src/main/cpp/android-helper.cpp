@@ -15,16 +15,15 @@
 #include "gateway_usb_conf.cpp"
 #include "AndroidIdentityService.h"
 
-/*
+// @see https://developer.android.com/training/articles/perf-jni
 static void append2logfile(const char *fmt) {
     __android_log_print(ANDROID_LOG_DEBUG, "append2logfile", "%s", fmt);
-    FILE *f = fopen("/storage/emulated/0/Android/data/com.commandus.lgw/files/Documents/lgw_com.log", "a+");
+    FILE *f = fopen("/storage/emulated/0/Android/data/com.commandus.lgw/files/Documents/lgw.log", "a+");
     if (f != nullptr) {
         fprintf(f, "%s\r\n", fmt);
         fclose(f);
     }
 }
- */
 
 /**
  * Java string to std::string
@@ -94,7 +93,10 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_setPayloadListener(
         loggerCls = env->GetObjectClass(loggerObject);
         jclass lpayloadCls = env->FindClass("com/commandus/lgw/Payload");
         payloadCls = reinterpret_cast<jclass>(env->NewGlobalRef(lpayloadCls));
-
+        if (lpayloadCls == nullptr)
+append2logfile("setPayloadListener lpayloadCls = null");
+        else
+append2logfile("setPayloadListener lpayloadCls found");
         android_LGW_onInfo = env->GetMethodID(loggerCls, "onInfo", "(Ljava/lang/String;)V");
 
         android_LGW_onConnected = env->GetMethodID(loggerCls, "onConnected", "(Z)V");
@@ -282,14 +284,17 @@ public:
         Payload &value
     ) override
     {
+append2logfile("onReceive 1");
         if (!loggerObject || !android_LGW_onReceive)
             return;
         bool requireDetach;
         JNIEnv *jEnv = getJavaEnv(requireDetach);
         if (!jEnv)
             return;
+append2logfile("onReceive 2");
         if (payloadCls) {
             if (payloadCnstr) {
+append2logfile("onReceive 3");
                 jstring hexPayload = jEnv->NewStringUTF(hexString(value.payload).c_str());
                 jobject jPayload = jEnv->NewObject(payloadCls, payloadCnstr, hexPayload,
                                                    value.frequency, value.rssi, value.lsnr);
@@ -298,12 +303,14 @@ public:
         }
         if (requireDetach)
             jVM->DetachCurrentThread();
+append2logfile("onReceive 4");
     }
 
     void onValue(
         Payload &value
     ) override
     {
+append2logfile("onValue 1");
         if (!loggerObject || !android_LGW_onValue)
             return;
         bool requireDetach;
@@ -311,18 +318,19 @@ public:
         if (!jEnv)
             return;
         jobject jPayload;
-        jclass clsz = jEnv->FindClass("com/commandus/lgw/Payload");
-        if (clsz) {
-            jmethodID cnstr = jEnv->GetMethodID(clsz, "<init>", "(Ljava/lang/String;IIF)V");
+        if (payloadCls) {
+            jmethodID cnstr = jEnv->GetMethodID(payloadCls, "<init>", "(Ljava/lang/String;IIF)V");
             if (cnstr) {
+append2logfile("onValue 2");
                 jstring hexPayload = jEnv->NewStringUTF(hexString(value.payload).c_str());
-                jPayload = jEnv->NewObject(clsz, cnstr, hexPayload,
+                jPayload = jEnv->NewObject(payloadCls, cnstr, hexPayload,
                                            value.frequency, value.rssi, value.lsnr);
                 jEnv->CallVoidMethod(loggerObject, android_LGW_onValue, jPayload);
             }
         }
         if (requireDetach)
             jVM->DetachCurrentThread();
+append2logfile("onValue 3");
     }
 
     /**
@@ -340,13 +348,15 @@ public:
         if (!jEnv)
             return 0;
         std::string a = DEVADDR2string(devaddr);
+append2logfile("identityGet addr");
+        append2logfile(a.c_str());
+
         jstring ja = jEnv->NewStringUTF(a.c_str());
         jobject r = jEnv->CallObjectMethod(loggerObject, android_LGW_onIdentityGet, ja);
         if (!r)
             return ERR_CODE_DEVICE_ADDRESS_NOTFOUND;
 
         jclass jLoraAddressCls = jEnv->GetObjectClass(r);
-
         // String addr not used
         // jfieldID jfAddr = jEnv->GetFieldID(jLoraAddressCls,"addr", "Ljava/lang/String;");
         // jstring jsAddr = (jstring) jEnv->GetObjectField(r, jfAddr);
@@ -360,7 +370,6 @@ public:
         retVal.setName(jstring2string(jEnv, jsDevEui));
         jEnv->DeleteLocalRef(joDevEui);
         jEnv->DeleteLocalRef(jsDevEui);
-
         // KEY128 nwkSKey
         jfieldID jfNwkSKey = jEnv->GetFieldID(jLoraAddressCls,"nwkSKey", "Lcom/commandus/lgw/KEY128;");
         jobject joNwkSKey = jEnv->GetObjectField(r, jfNwkSKey);
@@ -370,7 +379,6 @@ public:
         retVal.setNwkSKeyString(jstring2string(jEnv, jsNwkSKey));
         jEnv->DeleteLocalRef(joNwkSKey);
         jEnv->DeleteLocalRef(jsNwkSKey);
-
         // KEY128 appSKey
         jfieldID jfAppSKey = jEnv->GetFieldID(jLoraAddressCls,"appSKey", "Lcom/commandus/lgw/KEY128;");
         jobject joAppSKey = jEnv->GetObjectField(r, jfAppSKey);
@@ -380,7 +388,6 @@ public:
         retVal.setAppSKeyString(jstring2string(jEnv, jsAppSKey));
         jEnv->DeleteLocalRef(joAppSKey);
         jEnv->DeleteLocalRef(jsAppSKey);
-
         // String name
         jfieldID jfName = jEnv->GetFieldID(jLoraAddressCls,"name", "Ljava/lang/String;");
         jstring jsName = (jstring) jEnv->GetObjectField(r, jfName);
@@ -389,6 +396,7 @@ public:
 
         if (requireDetach)
             jVM->DetachCurrentThread();
+append2logfile("identityGet end");
         return 0;
     }
 
@@ -504,17 +512,127 @@ public:
     };
 };
 
+/**
+ * Handle uplink messages interface
+ */
+class AndroidLoraPacketHandler : public LoraPacketHandler {
+private:
+    JavaLGWEvent *javaLGWEvent;
+public:
+    AndroidLoraPacketHandler(JavaLGWEvent *javaLGWEvent) {
+        this->javaLGWEvent = javaLGWEvent;
+    }
+
+    int ack(
+        int socket,
+        const sockaddr_in* gwAddress,
+        const SEMTECH_PREFIX_GW &dataprefix
+    ) override
+    {
+        return 0;
+    };
+
+    // Return 0, retval = EUI and keys
+    int put(
+        const struct timeval &time,
+        SemtechUDPPacket &packet
+    ) override
+    {
+        if (!javaLGWEvent)
+            return ERR_CODE_NO_CONFIG;
+        Payload p;
+        p.received = time.tv_sec;
+        p.eui = packet.getDeviceEUI();
+        p.devName = DEVICENAME2string(packet.devId.name);
+        if (!packet.metadata.empty()) {
+            rfmMetaData &m = packet.metadata[0];
+            p.frequency = m.freq;
+            p.rssi = m.rssi;
+            p.lsnr = m.lsnr;
+        } else {
+            p.frequency = 0;
+            p.rssi = 0;
+            p.lsnr = 0;
+        }
+        p.payload = packet.payload;
+        javaLGWEvent->onValue(p);
+        return 0;
+    }
+
+    int putUnidentified(
+        const struct timeval &time,
+        SemtechUDPPacket &packet
+    ) override
+    {
+        if (!javaLGWEvent)
+            return ERR_CODE_NO_CONFIG;
+        Payload p;
+        p.received = time.tv_sec;
+        p.eui = "";
+        p.devName = "";
+        if (!packet.metadata.empty()) {
+            rfmMetaData &m = packet.metadata[0];
+            p.frequency = m.freq;
+            p.rssi = m.rssi;
+            p.lsnr = m.lsnr;
+        } else {
+            p.frequency = 0;
+            p.rssi = 0;
+            p.lsnr = 0;
+        }
+        javaLGWEvent->onReceive(p);
+        return 0;
+    }
+
+    // Reserve FPort number for network service purposes
+    void reserveFPort(
+        uint8_t value
+    ) override
+    {
+    }
+
+    int join(
+        const struct timeval &time,
+        int socket,
+        const sockaddr_in *socketAddress,
+        SemtechUDPPacket &packet
+    ) override
+    {
+        return 0;
+    }
+};
+
 class AndroidGatewayHandler {
 public:
     IdentityService *identityService;
     LibLoragwOpenClose *libLoragwOpenClose;
     PacketListener *listener;
-    AndroidGatewayHandler() {
+    AndroidLoraPacketHandler *packetHandler;
+
+    AndroidGatewayHandler(JavaLGWEvent *javaLGWEvent) {
         identityService = new AndroidIdentityService();
         libLoragwOpenClose = new AndroidLoragwOpenClose();
         libLoragwHelper.onOpenClose = libLoragwHelper.onOpenClose;
         listener = new USBListener();
+        listener->setLogger(7, javaLGWEvent);
+        packetHandler = new AndroidLoraPacketHandler(javaLGWEvent);
+        listener->setHandler(packetHandler);
+        listener->setIdentityService(identityService);
+        ((USBListener*) listener)->listener.setOnStop(
+                [&javaLGWEvent] (const LoraGatewayListener *lsnr,
+                    bool gracefullyStopped
+                ) {
+                    if (!gracefullyStopped) {
+                        // wait until all threads done
+                        while(!lsnr->isStopped()) {
+                            javaLGWEvent->onInfo(nullptr, LOG_INFO, LOG_MAIN_FUNC, 0, "Stopping..");
+                            sleep(1);
+                        }
+                    }
+                }
+        );
     }
+
     virtual ~AndroidGatewayHandler() {
         if (libLoragwHelper.onOpenClose) {
             delete libLoragwHelper.onOpenClose;
@@ -528,6 +646,10 @@ public:
             delete identityService;
             identityService = nullptr;
         }
+        if (packetHandler) {
+            delete packetHandler;
+            packetHandler = nullptr;
+        }
     }
 };
 
@@ -539,9 +661,10 @@ static void run(
     int verbosity
 )
 {
-    listenerHandler = new AndroidGatewayHandler();
-
     JavaLGWEvent javaCb;
+
+    listenerHandler = new AndroidGatewayHandler(&javaCb);
+
     libLoragwHelper.bind(&javaCb, listenerHandler->libLoragwOpenClose);
     listenerHandler->identityService->init("", &javaCb);
 

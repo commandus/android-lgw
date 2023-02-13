@@ -33,6 +33,7 @@
     <string name="msg_already_connected">Already connected</string>
     <string name="msg_unknown_usb_device">Unknown USB device</string>
     <string name="theme_name_dark">dark</string>
+    <string name="theme_name_bright">bright</string>
     <string name="msg_finished">Finished </string>
     <string name="msg_connecting_usb_serial_port">Connecting USB serial port..</string>
     <string name="err_open_serial_port">Error open serial port: </string>
@@ -42,7 +43,7 @@
     <string name="load">Load</string>
     <string name="action_add_device">Add</string>
     <string name="action_load_devices">Load</string>
-    <string name="action_share_devices">Save</string>
+    <string name="action_share_devices">Share</string>
     <string name="action_clear_devices">Remove all</string>
     <string name="confirm_delete_dialog_title">Confirm delete</string>
     <string name="yes">Yes</string>
@@ -56,4 +57,21 @@
     <string name="label_address_item_nwkskey">NwkSKey</string>
     <string name="label_address_item_appskey">AppSKey</string>
     <string name="label_address_item_name">Name</string>
+    <string name="action_gateway">Gateway</string>
+    <string name="action_preferences">Preferences</string>
+    <string name="msg_gateway_identifier">Gateway identifier</string>
+    <string name="msg_gateway_id_copied">Gateway ID copied to clipboard</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Preference -->
+    <string name="header_gateway">Send payload</string>
+    <string name="header_gui">Screen</string>
+
+    <string name="title_content_provider">Content provider Uri</string>
+    <string name="title_theme">Theme</string>
+
+    <string name="title_keep_screen_on">Keep the screen on</string>
+    <string name="title_start_at_boot">Start at boot</string>
+    <string name="header_service">Service</string>
+
 </resources>

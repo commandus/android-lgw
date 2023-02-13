@@ -1,6 +1,7 @@
 package com.commandus.gui;
 
 import android.content.ContentValues;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -29,6 +30,8 @@ import com.commandus.lgw.LgwSettings;
 import com.commandus.lgw.LoraDeviceAddress;
 import com.commandus.lgw.R;
 import com.commandus.lgw.databinding.FragmentAddressListBinding;
+
+import java.util.Date;
 
 public class AddressListFragment extends Fragment
         implements MenuProvider, EnterUriListener,
@@ -63,7 +66,7 @@ public class AddressListFragment extends Fragment
                 enterUriToLoad();
                 return true;
             case R.id.action_share_devices:
-                enterUriToShare();
+                shareAddresses();
                 return true;
             case R.id.action_clear_devices:
                 confirmDelete();
@@ -128,10 +131,14 @@ public class AddressListFragment extends Fragment
         d.show(this.getChildFragmentManager(), "");
     }
 
-    private void enterUriToShare() {
-        mAction = AddressAction.ACTION_SHARE;
-        EnterUriDialog d = new EnterUriDialog(this, lgwSettings.getShareLastUri());
-        d.show(this.getChildFragmentManager(), "");
+    private void shareAddresses() {
+        Intent sendIntent = new Intent();
+        sendIntent.setAction(Intent.ACTION_SEND);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, DeviceAddressProvider.toJson(getContext()));
+        sendIntent.putExtra(Intent.EXTRA_SUBJECT, "ABP addresses " + new Date().toString());
+        sendIntent.setType("text/plain");
+        Intent shareIntent = Intent.createChooser(sendIntent, null);
+        startActivity(shareIntent);
     }
 
     @Override

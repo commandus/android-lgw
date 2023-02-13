@@ -1,0 +1,26 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory app:title="@string/header_gateway">
+        <EditTextPreference
+            app:key="content_provider"
+            app:title="@string/title_content_provider"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/header_gui">
+        <ListPreference
+            app:key="theme"
+            app:defaultValue="@string/theme_name_bright"
+            app:entries="@array/theme_titles"
+            app:entryValues="@array/theme_names"
+            app:title="@string/title_theme"
+            app:useSimpleSummaryProvider="true" />
+        <SwitchPreferenceCompat
+            app:key="keep_screen_on"
+            app:title="@string/title_keep_screen_on" />
+    </PreferenceCategory>
+    <PreferenceCategory app:title="@string/header_service">
+        <SwitchPreferenceCompat
+            app:key="start_at_boot"
+            app:title="@string/title_start_at_boot" />
+    </PreferenceCategory>
+</PreferenceScreen>

@@ -61,20 +61,26 @@ public class DeviceAddressProvider extends ContentProvider {
     static private final int DATABASE_VERSION = 1;
 
     // sql query to create the table
-    static private final String SQL_CREATE_TABLE = "CREATE TABLE " + TABLE_NAME
-            + " (" + FN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-            + FN_ADDR + " TEXT, "
-            + FN_DEVEUI + " TEXT, "
-            + FN_NWKSKEY + " TEXT, "
-            + FN_APPSKEY + " TEXT, "
-            + FN_NAME + " TEXT);";
-    static private final String SQL_CREATE_INDEX_1 = "CREATE INDEX idx_name ON " + TABLE_NAME + " (" + FN_NAME + ")";
-    static private final String SQL_CREATE_INDEX_2 = "CREATE INDEX idx_address ON " + TABLE_NAME + " (" + FN_ADDR + ")";
+    static private final String[] SQL_CREATE_CLAUSES = {
+            "CREATE TABLE " + TABLE_NAME
+                    + " (" + FN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    + FN_ADDR + " TEXT, "
+                    + FN_DEVEUI + " TEXT, "
+                    + FN_NWKSKEY + " TEXT, "
+                    + FN_APPSKEY + " TEXT, "
+                    + FN_NAME + " TEXT);",
 
-    static private final String SQL_DROP_TABLE = "DROP TABLE IF EXISTS " + TABLE_NAME;
-    static private final String SQL_DROP_INDEX_1 = "DROP INDEX IF EXISTS idx_name";
-    static private final String SQL_DROP_INDEX_2 = "DROP INDEX IF EXISTS idx_address";
-    static private HashMap<String, String> PROJECTION_MAP;
+            "CREATE INDEX idx_name ON " + TABLE_NAME + " (" + FN_NAME + ")",
+
+            "CREATE INDEX idx_address ON " + TABLE_NAME + " (" + FN_ADDR + ")"
+    };
+
+    static private final String[] SQL_DROP_CLAUSES = {
+            "DROP INDEX IF EXISTS idx_name",
+            "DROP INDEX IF EXISTS idx_address",
+            "DROP TABLE IF EXISTS " + TABLE_NAME
+    };
+    // static private HashMap<String, String> PROJECTION_MAP;
 
     // creating a database
     private static class DatabaseHelper extends SQLiteOpenHelper {
@@ -84,16 +90,16 @@ public class DeviceAddressProvider extends ContentProvider {
 
         @Override
         public void onCreate(SQLiteDatabase db) {
-            db.execSQL(SQL_CREATE_TABLE);
-            db.execSQL(SQL_CREATE_INDEX_1);
-            db.execSQL(SQL_CREATE_INDEX_2);
+            for (String clause : SQL_CREATE_CLAUSES) {
+                db.execSQL(clause);
+            }
         }
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            db.execSQL(SQL_DROP_INDEX_2);
-            db.execSQL(SQL_DROP_INDEX_1);
-            db.execSQL(SQL_DROP_TABLE);
+            for (String clause : SQL_DROP_CLAUSES) {
+                db.execSQL(clause);
+            }
             onCreate(db);
         }
     }
@@ -158,7 +164,7 @@ public class DeviceAddressProvider extends ContentProvider {
         qb.setTables(TABLE_NAME);
         switch (uriMatcher.match(uri)) {
             case M_ADDRESSES:
-                qb.setProjectionMap(PROJECTION_MAP);
+                //qb.setProjectionMap(PROJECTION_MAP);
                 break;
             case M_ADDRESS:
                 qb.appendWhere( FN_ID + " = " + uri.getPathSegments().get(1));
@@ -205,12 +211,14 @@ public class DeviceAddressProvider extends ContentProvider {
         return r;
     }
 
+    private static final String SELECT_ALL_PREFIX = "SELECT " + FN_ID + ", " + FN_ADDR + ", "
+            + FN_DEVEUI + ", " + FN_NWKSKEY + ", " + FN_APPSKEY+ ", " + FN_NAME
+            + " FROM " + TABLE_NAME;
+
     public static LoraDeviceAddress getById(Context context, long id) {
         DatabaseHelper dbHelper = new DatabaseHelper(context);
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT " + FN_ID + ", " + FN_ADDR + ", "
-                + FN_DEVEUI + ", " + FN_NWKSKEY + ", " + FN_APPSKEY+ ", " + FN_NAME
-                + " FROM " + TABLE_NAME + " WHERE " + FN_ID + " = ? ",
+        Cursor cursor = db.rawQuery(SELECT_ALL_PREFIX + " WHERE " + FN_ID + " = ? ",
                 new String[]{Long.toString(id)});
         if (!cursor.moveToFirst())
             return null;
@@ -230,9 +238,7 @@ public class DeviceAddressProvider extends ContentProvider {
     public static LoraDeviceAddress getByAddress(Context context, String deviceAddress) {
         DatabaseHelper dbHelper = new DatabaseHelper(context);
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT " + FN_ID + ", " + FN_ADDR + ", "
-                        + FN_DEVEUI + ", " + FN_NWKSKEY + ", " + FN_APPSKEY+ ", " + FN_NAME
-                        + " FROM " + TABLE_NAME + " WHERE " + FN_ADDR + " = ? ",
+        Cursor cursor = db.rawQuery(SELECT_ALL_PREFIX + " WHERE " + FN_ADDR + " = ? ",
                 new String[]{ deviceAddress.toLowerCase() });
         if (!cursor.moveToFirst())
             return null;
@@ -252,9 +258,7 @@ public class DeviceAddressProvider extends ContentProvider {
     public static LoraDeviceAddress getByDevEui(Context context, String devEui) {
         DatabaseHelper dbHelper = new DatabaseHelper(context);
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT " + FN_ID + ", " + FN_ADDR + ", "
-                        + FN_DEVEUI + ", " + FN_NWKSKEY + ", " + FN_APPSKEY+ ", " + FN_NAME
-                        + " FROM " + TABLE_NAME + " WHERE " + FN_DEVEUI + " = ? ",
+        Cursor cursor = db.rawQuery(SELECT_ALL_PREFIX + " WHERE " + FN_DEVEUI + " = ? ",
                 new String[]{ devEui.toLowerCase() });
         if (!cursor.moveToFirst())
             return null;
@@ -303,6 +307,38 @@ public class DeviceAddressProvider extends ContentProvider {
         db.update(TABLE_NAME, address.getContentValues(), FN_ID + " = ?",
                 new String[]{ Long.toString(address.id)});
         db.close();
+    }
+
+    public static String toJson(Context context) {
+        DatabaseHelper dbHelper = new DatabaseHelper(context);
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor cursor = db.rawQuery(SELECT_ALL_PREFIX + " ORDER BY " + FN_NAME,null);
+        StringBuilder b = new StringBuilder();
+        b.append("[");
+        boolean isFirst = true;
+        if (cursor.moveToFirst()) {
+            while (true) {
+                if (isFirst)
+                    isFirst = false;
+                else
+                    b.append(", ");
+                LoraDeviceAddress r = new LoraDeviceAddress(
+                    cursor.getInt(F_ID),
+                    cursor.getString(F_ADDR),
+                    cursor.getString(F_DEVEUI),
+                    cursor.getString(F_NWKSKEY),
+                    cursor.getString(F_APPSKEY),
+                    cursor.getString(F_NAME)
+                );
+                b.append(r.toJson());
+                if (!cursor.moveToNext())
+                    break;
+            }
+        }
+        b.append("]");
+        cursor.close();
+        db.close();
+        return b.toString();
     }
 
 }

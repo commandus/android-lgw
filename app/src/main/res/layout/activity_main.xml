@@ -6,7 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.commandus.gui.MainActivity">
-
     <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/layoutEx"
         android:layout_width="match_parent"
@@ -16,8 +15,7 @@
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0"
-        tools:layout_editor_absoluteX="-196dp">
+        >
 
         <androidx.appcompat.widget.LinearLayoutCompat
             android:id="@+id/layoutTop"
@@ -52,7 +50,6 @@
                 style="?android:attr/buttonBarButtonStyle"
                 >
             </Button>
-
         </androidx.appcompat.widget.LinearLayoutCompat>
 
         <androidx.appcompat.widget.LinearLayoutCompat

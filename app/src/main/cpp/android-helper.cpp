@@ -93,10 +93,6 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_setPayloadListener(
         loggerCls = env->GetObjectClass(loggerObject);
         jclass lpayloadCls = env->FindClass("com/commandus/lgw/Payload");
         payloadCls = reinterpret_cast<jclass>(env->NewGlobalRef(lpayloadCls));
-        if (lpayloadCls == nullptr)
-append2logfile("setPayloadListener lpayloadCls = null");
-        else
-append2logfile("setPayloadListener lpayloadCls found");
         android_LGW_onInfo = env->GetMethodID(loggerCls, "onInfo", "(Ljava/lang/String;)V");
 
         android_LGW_onConnected = env->GetMethodID(loggerCls, "onConnected", "(Z)V");
@@ -284,17 +280,14 @@ public:
         Payload &value
     ) override
     {
-append2logfile("onReceive 1");
         if (!loggerObject || !android_LGW_onReceive)
             return;
         bool requireDetach;
         JNIEnv *jEnv = getJavaEnv(requireDetach);
         if (!jEnv)
             return;
-append2logfile("onReceive 2");
         if (payloadCls) {
             if (payloadCnstr) {
-append2logfile("onReceive 3");
                 jstring hexPayload = jEnv->NewStringUTF(hexString(value.payload).c_str());
                 jobject jPayload = jEnv->NewObject(payloadCls, payloadCnstr, hexPayload,
                                                    value.frequency, value.rssi, value.lsnr);
@@ -303,14 +296,12 @@ append2logfile("onReceive 3");
         }
         if (requireDetach)
             jVM->DetachCurrentThread();
-append2logfile("onReceive 4");
     }
 
     void onValue(
         Payload &value
     ) override
     {
-append2logfile("onValue 1");
         if (!loggerObject || !android_LGW_onValue)
             return;
         bool requireDetach;
@@ -321,7 +312,6 @@ append2logfile("onValue 1");
         if (payloadCls) {
             jmethodID cnstr = jEnv->GetMethodID(payloadCls, "<init>", "(Ljava/lang/String;IIF)V");
             if (cnstr) {
-append2logfile("onValue 2");
                 jstring hexPayload = jEnv->NewStringUTF(hexString(value.payload).c_str());
                 jPayload = jEnv->NewObject(payloadCls, cnstr, hexPayload,
                                            value.frequency, value.rssi, value.lsnr);
@@ -330,7 +320,6 @@ append2logfile("onValue 2");
         }
         if (requireDetach)
             jVM->DetachCurrentThread();
-append2logfile("onValue 3");
     }
 
     /**

@@ -1,7 +1,8 @@
 package com.commandus.gui;
 
-import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -13,17 +14,22 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.view.MenuProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.commandus.lgw.DeviceAddressProvider;
-import com.commandus.lgw.DeviceAddresses;
 import com.commandus.lgw.LGWListener;
 import com.commandus.lgw.LgwSettings;
 import com.commandus.lgw.LoraDeviceAddress;
@@ -33,7 +39,8 @@ import com.commandus.lgw.databinding.ActivityMainBinding;
 import com.commandus.serial.SerialPort;
 
 public class MainActivity extends AppCompatActivity
-    implements ServiceConnection, LGWListener, RegionDialog.RegionSelectListener
+    implements ServiceConnection, LGWListener, RegionDialog.RegionSelectListener,
+        MenuProvider
 {
     private static final int SOUND_PRIORITY_1 = 1;
     private static final String ACTION_USB_ATTACHED = "android.hardware.usb.action.USB_DEVICE_ATTACHED";
@@ -58,6 +65,7 @@ public class MainActivity extends AppCompatActivity
     private TextView textCountValue;
     private RecyclerView recyclerViewLog;
     private Button buttonDevices;
+    private String gwId;
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
@@ -67,8 +75,6 @@ public class MainActivity extends AppCompatActivity
 
         runOnUiThread(() -> {
             updateUiRegion();
-            @SuppressLint("HardwareIds") String gwId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
-            setTitle(getString(R.string.app_name) + " " + gwId);
             // reflect does USB gateway connected already
             if (!service.connected) {
                 service.connected = isUSBConnected();
@@ -89,10 +95,13 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         lgwSettings = LgwSettings.getSettings(this);
+
         // do not turn off screen
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         com.commandus.lgw.databinding.ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        gwId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
         /*
         AudioAttributes attributes = new AudioAttributes.Builder()
@@ -135,6 +144,8 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        addMenuProvider(this);
+
         buttonRegion.setOnClickListener(view -> selectRegion());
 
         broadcastReceiver = new BroadcastReceiver() {
@@ -145,8 +156,41 @@ public class MainActivity extends AppCompatActivity
         };
 
         startService(new Intent(this, LGWService.class)); // prevents service destroy on unbind from recreated activity caused by orientation change
+        applySettings();
+    }
 
-        checkTheme();
+    @Override
+    protected void onResume() {
+        super.onResume();
+        lgwSettings.load();
+        applySettings();
+    }
+
+    @Override
+    public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+        menuInflater.inflate(R.menu.menu_gateway, menu);
+        MenuItem mi = menu.findItem(R.id.action_gateway);
+        if (mi != null) {
+            mi.setTitle(gwId);
+        }
+    }
+
+    @Override
+    public boolean onMenuItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.action_gateway:
+                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipData clip = ClipData.newPlainText(getString(R.string.msg_gateway_identifier), gwId);
+                clipboard.setPrimaryClip(clip);
+                Toast.makeText(this, getString(R.string.msg_gateway_id_copied), Toast.LENGTH_LONG).show();
+                return true;
+            case R.id.action_preferences:
+                Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+                startActivity(intent);
+                return true;
+        }
+        return false;
     }
 
     private void selectRegion() {
@@ -390,7 +434,13 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void checkTheme() {
+    private void applySettings() {
+        // do not turn off screen
+        if (lgwSettings.getKeepScreenOn()) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        } else {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
         if (lgwSettings.getTheme().equals(getString(R.string.theme_name_dark)))
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         else

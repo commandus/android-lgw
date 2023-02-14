@@ -110,7 +110,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_setPayloadListener(
         android_LGW_onSetAttr = env->GetMethodID(loggerCls, "onSetAttr", "(Z)I");
         android_LGW_onIdentitySize = env->GetMethodID(loggerCls, "onIdentitySize", "()I");
         android_LGW_onIdentityGet = env->GetMethodID(loggerCls, "onIdentityGet", "(Ljava/lang/String;)Lcom/commandus/lgw/LoraDeviceAddress;");
-        android_LGW_onIdentityGetNetworkIdentity = env->GetMethodID(loggerCls, "onHetNetworkIdentity", "(Ljava/lang/String;)Lcom/commandus/lgw/LoraDeviceAddress;");
+        android_LGW_onIdentityGetNetworkIdentity = env->GetMethodID(loggerCls, "onGetNetworkIdentity", "(Ljava/lang/String;)Lcom/commandus/lgw/LoraDeviceAddress;");
 
         payloadCnstr = env->GetMethodID(payloadCls, "<init>", "(Ljava/lang/String;IIF)V");
     } else {

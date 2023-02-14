@@ -5,10 +5,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="@dimen/lgwPadding"
-    tools:context="com.commandus.gui.AddressListFragment">
+    tools:context=".AddressListFragment">
 
     <TextView
-        android:id="@+id/textview_device_address_list_status"
+        android:id="@+id/textview_payload_list_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text=""
@@ -17,8 +17,8 @@
         app:layout_constraintStart_toStartOf="parent"
          />
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewDeviceAddress"
-        app:layout_constraintTop_toBottomOf="@+id/textview_device_address_list_status"
+        android:id="@+id/recyclerViewPayload"
+        app:layout_constraintTop_toBottomOf="@+id/textview_payload_list_status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingStart="@dimen/lgwPadding"

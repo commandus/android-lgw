@@ -7,8 +7,14 @@
         android:title="@string/action_gateway"
         app:showAsAction="always" />
     <item
-        android:id="@+id/action_preferences"
+        android:id="@+id/action_payload"
         android:orderInCategory="200"
+        android:title="@string/action_payload"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_preferences"
+        android:orderInCategory="300"
         android:title="@string/action_preferences"
+        android:icon="@android:drawable/ic_menu_preferences"
         app:showAsAction="ifRoom" />
 </menu>

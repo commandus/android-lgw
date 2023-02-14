@@ -20,6 +20,6 @@ public interface LGWListener {
      * @return null if not found
      */
     LoraDeviceAddress onIdentityGet(String devAddr);
-    LoraDeviceAddress onHetNetworkIdentity(String devEui);
+    LoraDeviceAddress onGetNetworkIdentity(String devEui);
     int onIdentitySize();
 }

@@ -1,4 +1,4 @@
-package com.commandus.gui;
+package com.commandus.lgw;
 
 import android.database.Cursor;
 import android.view.LayoutInflater;
@@ -9,15 +9,11 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.commandus.lgw.AddressSelection;
-import com.commandus.lgw.DeviceAddressProvider;
-import com.commandus.lgw.R;
-
 public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdapter.ViewHolder> {
 
     private final RecyclerView recyclerView;
     private final Cursor mCursor;
-    protected final AddressSelection mAddressSelection;
+    protected final ItemSelection mSelection;
 
     /**
      * Provide a reference to the type of views that you are using
@@ -39,7 +35,7 @@ public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdap
         public void onClick(View view) {
             DeviceAddressAdapter adapter = (DeviceAddressAdapter) getBindingAdapter();
             if (adapter != null)
-                adapter.mAddressSelection.onSelect(id);
+                adapter.mSelection.onSelect(id);
         }
 
         public void set(int position, long id, String name) {
@@ -50,11 +46,11 @@ public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdap
 
     // Create new views (invoked by the layout manager)
 
-    public DeviceAddressAdapter(RecyclerView rv, AddressSelection addressSelection) {
+    public DeviceAddressAdapter(RecyclerView rv, ItemSelection addressSelection) {
         recyclerView = rv;
-        mAddressSelection = addressSelection;
+        mSelection = addressSelection;
         mCursor = recyclerView.getContext().getContentResolver().query(
-                DeviceAddressProvider.CONTENT_URI_ABP, DeviceAddressProvider.PROJECTION, null, null, null);
+            DeviceAddressProvider.CONTENT_URI_ABP, DeviceAddressProvider.PROJECTION, null, null, null);
     }
 
     @NonNull
@@ -62,7 +58,7 @@ public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdap
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
         View view = LayoutInflater.from(viewGroup.getContext())
                 .inflate(R.layout.address_list_item, viewGroup, false);
-        if (mAddressSelection != null) {
+        if (mSelection != null) {
             final RecyclerView.ViewHolder holder = new DeviceAddressAdapter.ViewHolder(view);
         }
         return new ViewHolder(view);

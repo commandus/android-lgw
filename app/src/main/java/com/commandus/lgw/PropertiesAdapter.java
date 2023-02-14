@@ -1,6 +1,5 @@
-package com.commandus.gui;
+package com.commandus.lgw;
 
-import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,10 +7,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.commandus.lgw.GatewayEvent;
-import com.commandus.lgw.Payload;
-import com.commandus.lgw.R;
 
 import java.util.ArrayList;
 

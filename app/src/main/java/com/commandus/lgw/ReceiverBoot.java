@@ -5,8 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-import com.commandus.gui.MainActivity;
-
 /**
  * Receive android.intent.action.BOOT_COMPLETED broadcast and start up
  */

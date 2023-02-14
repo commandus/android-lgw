@@ -1,4 +1,4 @@
-package com.commandus.gui;
+package com.commandus.lgw;
 
 import android.app.Dialog;
 import android.content.Context;
@@ -7,10 +7,6 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
-import androidx.fragment.app.Fragment;
-
-import com.commandus.lgw.LgwSettings;
-import com.commandus.lgw.R;
 
 public class ConfirmDeleteDialog extends DialogFragment {
     private final String mLastUri;
@@ -45,7 +41,7 @@ public class ConfirmDeleteDialog extends DialogFragment {
     /* The activity that creates an instance of this dialog fragment must
      * implement this interface in order to receive event callbacks.
      * Each method passes the DialogFragment in case the host needs to query it. */
-    public interface EnterUriListener extends com.commandus.gui.EnterUriListener {
+    public interface EnterUriListener extends com.commandus.lgw.EnterUriListener {
         void onSetUri(String value);
     }
 

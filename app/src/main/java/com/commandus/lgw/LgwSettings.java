@@ -17,7 +17,7 @@ public class LgwSettings {
     private static final String PREF_REGION_INDEX = "region_index";
     private static final String PREF_LOAD_LAST_URI = "load_last_uri";
     private static final String PREF_SHARE_LAST_URI = "share_last_uri";
-    private static final String DEF_CONTENT_PROVIDER_URI = "content://lora/payload";
+    private static final String DEF_CONTENT_PROVIDER_URI = "content://lora.data/payload";
     private static LgwSettings mLgwSettings = null;
     private final Context mContext;
     private String mTheme; // light|dark
@@ -42,6 +42,9 @@ public class LgwSettings {
         return mContentProviderUri;
     }
 
+    /**
+     * Load settings
+     */
     public void load() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
         mTheme = prefs.getString(PREF_THEME, mContext.getString(R.string.theme_name_bright));
@@ -60,6 +63,9 @@ public class LgwSettings {
         load();
     }
 
+    /**
+     * Save settings
+     */
     public void save() {
         invalidate();
 
@@ -76,12 +82,15 @@ public class LgwSettings {
         editor.apply();
     }
 
+    /**
+     * Check settings and fix invalid values to default
+     * @return true if settings fixed (it means need to reload or save)
+     */
     private boolean invalidate() {
         boolean r = false;
-        if ((mTheme != mContext.getString(R.string.theme_name_bright))
-            && (mTheme != mContext.getString(R.string.theme_name_dark))) {
+        if ((!mTheme.equals(mContext.getString(R.string.theme_name_dark)))) {
+            r = mTheme.equals(mContext.getString(R.string.theme_name_bright));
             mTheme = mContext.getString(R.string.theme_name_bright);
-            r = true;
         }
         if (mContentProviderUri.isEmpty()) {
             mContentProviderUri = DEF_CONTENT_PROVIDER_URI;
@@ -94,6 +103,11 @@ public class LgwSettings {
         return r;
     }
 
+    /**
+     * Singleton
+     * @param context
+     * @return
+     */
     public synchronized static LgwSettings getSettings(Context context) {
         if (mLgwSettings == null) {
             mLgwSettings = new LgwSettings(context);
@@ -115,13 +129,13 @@ public class LgwSettings {
     public String getLoadLastUri() {
         return mLoadLastUri;
     }
-    public String getShareLastUri() {
-        return mShareLastUri;
-    }
     public void setLoadLastUri(String value) {
         mLoadLastUri = value;
     }
-    public void setShareLastUri(String value) {
+    public String getShareLastUri() {
+        return mShareLastUri;
+    }
+    public void setSaveLastUri(String value) {
         mShareLastUri = value;
     }
 }

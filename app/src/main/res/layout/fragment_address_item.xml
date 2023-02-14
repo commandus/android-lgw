@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="@dimen/lgwPadding"
-    tools:context="com.commandus.gui.AddressItemFragment">
+    tools:context=".AddressItemFragment">
 
     <TextView
         android:id="@+id/textview_address_item_state"
@@ -18,7 +18,7 @@
         />
 
     <TextView
-        android:id="@+id/textview_address_item_addr"
+        android:id="@+id/label_address_item_address"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/textview_address_item_state"
@@ -27,47 +27,47 @@
         />
 
     <EditText
-        android:id="@+id/editTextAddress"
+        android:id="@+id/edit_text_address_item_address"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
         android:hint="@string/label_device_address"
         android:inputType="text"
         android:minHeight="48dp"
-        app:layout_constraintTop_toBottomOf="@id/textview_address_item_addr"
+        app:layout_constraintTop_toBottomOf="@id/label_address_item_address"
         android:autofillHints="" />
 
     <TextView
-        android:id="@+id/textview_address_item_eui"
+        android:id="@+id/label_address_item_eui"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/editTextAddress"
+        app:layout_constraintTop_toBottomOf="@id/edit_text_address_item_address"
         app:layout_constraintStart_toStartOf="parent"
         android:text="@string/label_address_item_eui"
         />
 
     <EditText
-        android:id="@+id/editTextEUI"
+        android:id="@+id/edit_text_item_eui"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
         android:hint="@string/label_device_eui"
         android:inputType="text"
         android:minHeight="48dp"
-        app:layout_constraintTop_toBottomOf="@id/textview_address_item_eui"
+        app:layout_constraintTop_toBottomOf="@id/label_address_item_eui"
         android:autofillHints="" />
 
     <TextView
-        android:id="@+id/textview_address_item_nwkskey"
+        android:id="@+id/label_address_item_nwkskey"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/editTextEUI"
+        app:layout_constraintTop_toBottomOf="@id/edit_text_item_eui"
         app:layout_constraintStart_toStartOf="parent"
         android:text="@string/label_address_item_nwkskey"
         />
 
     <EditText
-        android:id="@+id/editTextNwkSKey"
+        android:id="@+id/edit_text_address_item_nwkskey"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:autofillHints=""
@@ -76,54 +76,45 @@
         android:inputType="text"
         android:minHeight="48dp"
         android:textColorHint="#757575"
-        app:layout_constraintTop_toBottomOf="@id/textview_address_item_nwkskey" />
+        app:layout_constraintTop_toBottomOf="@id/label_address_item_nwkskey" />
 
     <TextView
-        android:id="@+id/textview_address_item_appskey"
+        android:id="@+id/label_address_item_appskey"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/editTextNwkSKey"
+        app:layout_constraintTop_toBottomOf="@id/edit_text_address_item_nwkskey"
         app:layout_constraintStart_toStartOf="parent"
         android:text="@string/label_address_item_appskey"
         />
 
-
     <EditText
-        android:id="@+id/editTextAppSKey"
+        android:id="@+id/editTextAddressAppSKey"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
         android:hint="@string/label_device_appskey"
         android:inputType="text"
         android:minHeight="48dp"
-        app:layout_constraintTop_toBottomOf="@id/textview_address_item_appskey"
+        app:layout_constraintTop_toBottomOf="@id/label_address_item_appskey"
         android:autofillHints="" />
 
     <TextView
-        android:id="@+id/textview_address_item_name"
+        android:id="@+id/label_address_item_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/editTextAppSKey"
+        app:layout_constraintTop_toBottomOf="@id/editTextAddressAppSKey"
         app:layout_constraintStart_toStartOf="parent"
         android:text="@string/label_address_item_name"
         />
 
     <EditText
-        android:id="@+id/editTextName"
+        android:id="@+id/editTextAddressItemName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
         android:hint="@string/label_device_name"
         android:inputType="text"
         android:minHeight="48dp"
-        app:layout_constraintTop_toBottomOf="@id/textview_address_item_name"
+        app:layout_constraintTop_toBottomOf="@id/label_address_item_name"
         android:autofillHints="" />
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/address_item_panel_buttons"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

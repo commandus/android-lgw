@@ -1,4 +1,4 @@
-package com.commandus.gui;
+package com.commandus.lgw;
 
 public interface ConfirmationListener {
     public void confirmed();

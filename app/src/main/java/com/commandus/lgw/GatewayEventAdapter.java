@@ -1,4 +1,4 @@
-package com.commandus.gui;
+package com.commandus.lgw;
 
 import android.graphics.Typeface;
 import android.view.LayoutInflater;
@@ -8,10 +8,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.commandus.lgw.GatewayEvent;
-import com.commandus.lgw.Payload;
-import com.commandus.lgw.R;
 
 import java.util.ArrayList;
 
@@ -84,9 +80,6 @@ public class GatewayEventAdapter extends RecyclerView.Adapter<GatewayEventAdapte
         TextView tv = viewHolder.getTextView();
         if (e.hasPayload())
             tv.setTypeface(null, Typeface.BOLD);
-        else
-            if (e.hasRawPayload())
-                tv.setTypeface(null, Typeface.ITALIC);
         tv.setText(e.toString());
     }
 

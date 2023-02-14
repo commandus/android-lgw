@@ -12,13 +12,9 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.text.TextUtils;
 
-import com.commandus.gui.LGWService;
-
-import java.util.HashMap;
-
 public class DeviceAddressProvider extends ContentProvider {
 
-    static final String PROVIDER_NAME = "lora";
+    static final String PROVIDER_NAME = "lora.address";
     // content URI
     static final String URL = "content://" + PROVIDER_NAME;
     static final String URL_ABP = URL + "/abp";

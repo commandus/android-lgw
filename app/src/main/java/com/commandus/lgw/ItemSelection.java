@@ -1,5 +1,5 @@
 package com.commandus.lgw;
 
-public interface AddressSelection {
+public interface ItemSelection {
     public void onSelect(long id);
 }

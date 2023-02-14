@@ -1,4 +1,4 @@
-package com.commandus.gui;
+package com.commandus.lgw;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -17,11 +17,6 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 
-import com.commandus.lgw.DevEUI;
-import com.commandus.lgw.DeviceAddressProvider;
-import com.commandus.lgw.KEY128;
-import com.commandus.lgw.LoraDeviceAddress;
-import com.commandus.lgw.R;
 import com.commandus.lgw.databinding.FragmentAddressItemBinding;
 
 public class AddressItemFragment extends Fragment
@@ -44,11 +39,11 @@ public class AddressItemFragment extends Fragment
             Bundle savedInstanceState
     ) {
         binding = FragmentAddressItemBinding.inflate(inflater, container, false);
-        editTextAddress = binding.editTextAddress;
-        editTextEUI = binding.editTextEUI;
-        editTextNwkSKey = binding.editTextNwkSKey;
-        editTextAppSKey = binding.editTextAppSKey;
-        editTextName = binding.editTextName;
+        editTextAddress = binding.editTextAddressItemAddress;
+        editTextEUI = binding.editTextItemEui;
+        editTextNwkSKey = binding.editTextAddressItemNwkskey;
+        editTextAppSKey = binding.editTextAddressAppSKey;
+        editTextName = binding.editTextAddressItemName;
         return binding.getRoot();
     }
 
@@ -87,7 +82,7 @@ public class AddressItemFragment extends Fragment
                 editTextName.getText().toString()
             ));
         NavHostFragment.findNavController(AddressItemFragment.this)
-                .navigate(R.id.action_SecondFragment_to_FirstFragment);
+                .navigate(R.id.action_DeviceItemFragment_to_DeviceListFragment);
     }
 
     @Override
@@ -134,6 +129,6 @@ public class AddressItemFragment extends Fragment
 
     private void back() {
         NavHostFragment.findNavController(AddressItemFragment.this)
-                .navigate(R.id.action_SecondFragment_to_FirstFragment);
+                .navigate(R.id.action_DeviceItemFragment_to_DeviceListFragment);
     }
 }

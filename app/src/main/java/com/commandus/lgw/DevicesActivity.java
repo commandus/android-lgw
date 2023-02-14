@@ -1,4 +1,4 @@
-package com.commandus.gui;
+package com.commandus.lgw;
 
 import android.os.Bundle;
 
@@ -44,7 +44,6 @@ public class DevicesActivity extends AppCompatActivity {
     public void onBackPressed() {
         Fragment fragmentList = getSupportFragmentManager().findFragmentById(R.id.DeviceListFragment);
         if (fragmentList != null && fragmentList.isVisible()) {
-            // add your code here
             finish();
         } else {
             super.onBackPressed();

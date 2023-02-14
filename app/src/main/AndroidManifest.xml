@@ -5,10 +5,8 @@
     <uses-feature android:name="android.hardware.usb.host" />
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <!-- logging -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <!-- auto-start -->
+    <uses-permission android:name="android.permission.INTERNET" /> <!-- logging -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> <!-- auto-start -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.QUICKBOOT_POWERON" />
 
@@ -23,27 +21,7 @@
         android:theme="@style/Theme.Rak2287usb"
         tools:targetApi="31">
         <activity
-            android:name="com.commandus.gui.SettingsActivity"
-            android:exported="false"
-            android:label="@string/title_activity_settings" />
-        <activity
-            android:name="com.commandus.gui.DevicesActivity"
-            android:exported="false"
-            android:label="@string/title_activity_devices"
-            android:theme="@style/Theme.Rak2287usb.NoActionBar">
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="" />
-        </activity>
-
-        <provider
-            android:name=".DeviceAddressProvider"
-            android:authorities="lora"
-            android:enabled="true"
-            android:exported="true" />
-
-        <activity
-            android:name="com.commandus.gui.MainActivity"
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -63,20 +41,48 @@
                 android:resource="@xml/device_filter" />
             -->
         </activity>
+        <activity
+            android:name=".DevicesActivity"
+            android:exported="false"
+            android:label="@string/title_activity_devices"
+            android:theme="@style/Theme.Rak2287usb.NoActionBar">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+        <activity
+            android:name=".PayloadActivity"
+            android:exported="false"
+            android:label="@string/title_activity_payload"
+            android:theme="@style/Theme.Rak2287usb.NoActionBar" />
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_settings" />
 
-        <service android:name="com.commandus.gui.LGWService" />
+        <provider
+            android:name=".DeviceAddressProvider"
+            android:authorities="lora.address"
+            android:enabled="true"
+            android:exported="true" />
+        <provider
+            android:name=".PayloadProvider"
+            android:authorities="lora.data"
+            android:enabled="true"
+            android:exported="true" />
 
-        <!-- start up service on boot -->
-        <receiver android:name=".ReceiverBoot"
+        <service android:name=".LGWService" /> <!-- start up service on boot -->
+        <receiver
+            android:name=".ReceiverBoot"
             android:exported="false">
             <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"></action>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
-                <category android:name="android.intent.category.DEFAULT"></category>
+
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
-
     </application>
 
 </manifest>

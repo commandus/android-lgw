@@ -1,4 +1,4 @@
-package com.commandus.gui;
+package com.commandus.lgw;
 
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
@@ -29,12 +29,6 @@ import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.view.MenuProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.commandus.lgw.DeviceAddressProvider;
-import com.commandus.lgw.LGWListener;
-import com.commandus.lgw.LgwSettings;
-import com.commandus.lgw.LoraDeviceAddress;
-import com.commandus.lgw.Payload;
-import com.commandus.lgw.R;
 import com.commandus.lgw.databinding.ActivityMainBinding;
 import com.commandus.serial.SerialPort;
 
@@ -96,8 +90,6 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         lgwSettings = LgwSettings.getSettings(this);
 
-        // do not turn off screen
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         com.commandus.lgw.databinding.ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -162,7 +154,9 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
+        // reload settings after SettingsActivity returns
         lgwSettings.load();
+        // apply settings (if any)
         applySettings();
     }
 
@@ -188,6 +182,10 @@ public class MainActivity extends AppCompatActivity
             case R.id.action_preferences:
                 Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
                 startActivity(intent);
+                return true;
+            case R.id.action_payload:
+                Intent intent2 = new Intent(MainActivity.this, PayloadActivity.class);
+                startActivity(intent2);
                 return true;
         }
         return false;
@@ -344,7 +342,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public LoraDeviceAddress onHetNetworkIdentity(String devEui) {
+    public LoraDeviceAddress onGetNetworkIdentity(String devEui) {
         // not used
         return null;
     }
@@ -434,6 +432,9 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * After settings has been changed apply settings
+     */
     private void applySettings() {
         // do not turn off screen
         if (lgwSettings.getKeepScreenOn()) {
@@ -445,6 +446,10 @@ public class MainActivity extends AppCompatActivity
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         else
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        // service
+        if (service != null) {
+            service.setContentProviderUri(lgwSettings.getContentProviderUri());
+        }
     }
 
     @Override

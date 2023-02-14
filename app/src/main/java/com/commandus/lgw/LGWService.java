@@ -1,22 +1,18 @@
-package com.commandus.gui;
+package com.commandus.lgw;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.provider.Settings;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
-import com.commandus.lgw.DeviceAddressProvider;
-import com.commandus.lgw.LGW;
-import com.commandus.lgw.LGWListener;
-import com.commandus.lgw.LoraDeviceAddress;
-import com.commandus.lgw.Payload;
-import com.commandus.lgw.R;
 import com.commandus.serial.SerialErrorListener;
 import com.commandus.serial.SerialPort;
 import com.commandus.serial.SerialSocket;
@@ -30,7 +26,8 @@ public class LGWService extends Service implements
     private SerialSocket usbSerialSocket;
 
     public GatewayEventAdapter gatewayEventAdapter;
-
+    // where to send payload
+    private Uri mContentProviderUri;
 
     /**
      * Return opened USB COM port
@@ -53,6 +50,10 @@ public class LGWService extends Service implements
             usbSerialSocket = null;
         }
         onDisconnected();
+    }
+
+    public void setContentProviderUri(String contentProvider) {
+        mContentProviderUri = Uri.parse(contentProvider);
     }
 
     class LGWServiceBinder extends Binder {
@@ -219,34 +220,12 @@ public class LGWService extends Service implements
 
     @Override
     public LoraDeviceAddress onIdentityGet(String devAddr) {
-        LoraDeviceAddress r = DeviceAddressProvider.getByAddress(this, devAddr);
-        synchronized (this) {
-            mainLooper.post(() -> {
-                if (listener != null) {
-                    if (r != null)
-                        listener.onInfo("== GET ADDR " + devAddr + " " + r.toString());
-                    else
-                        listener.onInfo("== GET ADDR ERROR " + devAddr);
-                }
-            });
-        }
-        return r;
+        return DeviceAddressProvider.getByAddress(this, devAddr);
     }
 
     @Override
-    public LoraDeviceAddress onHetNetworkIdentity(String devEui) {
-        LoraDeviceAddress r = DeviceAddressProvider.getByDevEui(this, devEui);
-        synchronized (this) {
-            mainLooper.post(() -> {
-                if (listener != null) {
-                    if (r != null)
-                        listener.onInfo("== GET EUI " + devEui + " " + r.toString());
-                    else
-                        listener.onInfo("== GET EUI ERROR " + devEui);
-                }
-            });
-        }
-        return r;
+    public LoraDeviceAddress onGetNetworkIdentity(String devEui) {
+        return DeviceAddressProvider.getByDevEui(this, devEui);
     }
 
     @Override
@@ -270,6 +249,7 @@ public class LGWService extends Service implements
     @Override
     public void onValue(Payload payload) {
         valueCount++;
+        sendPayload2ContentProvider(payload);
         synchronized (this) {
             mainLooper.post(() -> {
                 gatewayEventAdapter.pushPayLoad(payload);
@@ -278,6 +258,18 @@ public class LGWService extends Service implements
                 }
             });
         }
+    }
+
+    private Uri sendPayload2ContentProvider(Payload payload) {
+        Log.i("LGW", payload.toString());
+        if (mContentProviderUri == null)
+            return null;
+        try {
+            return getContentResolver().insert(mContentProviderUri,
+                payload.getContentValues());
+        } catch (IllegalArgumentException ignored) {
+        }
+        return null;
     }
 
     private void cancelNotification() {

@@ -1,4 +1,4 @@
-package com.commandus.gui;
+package com.commandus.lgw;
 
 import android.content.ContentValues;
 import android.content.Intent;
@@ -22,20 +22,13 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.commandus.lgw.AddressListResult;
-import com.commandus.lgw.AddressLoader;
-import com.commandus.lgw.AddressSelection;
-import com.commandus.lgw.DeviceAddressProvider;
-import com.commandus.lgw.LgwSettings;
-import com.commandus.lgw.LoraDeviceAddress;
-import com.commandus.lgw.R;
 import com.commandus.lgw.databinding.FragmentAddressListBinding;
 
 import java.util.Date;
 
 public class AddressListFragment extends Fragment
         implements MenuProvider, EnterUriListener,
-        AddressSelection, AddressListResult, ConfirmationListener {
+        ItemSelection, AddressListResult, ConfirmationListener {
 
     private FragmentAddressListBinding binding;
     private RecyclerView recyclerViewDeviceAddress;
@@ -46,7 +39,7 @@ public class AddressListFragment extends Fragment
     public void onSelect(long id) {
         addressItemViewModel.selectAddress(DeviceAddressProvider.getById(getContext(), id));
         NavHostFragment.findNavController(AddressListFragment.this)
-                .navigate(R.id.action_FirstFragment_to_SecondFragment);
+                .navigate(R.id.action_DeviceListFragment_to_DeviceItemFragment);
     }
 
     @Override
@@ -60,7 +53,7 @@ public class AddressListFragment extends Fragment
         switch (id) {
             case R.id.action_add_device:
                 NavHostFragment.findNavController(AddressListFragment.this)
-                        .navigate(R.id.action_FirstFragment_to_SecondFragment);
+                        .navigate(R.id.action_DeviceListFragment_to_DeviceItemFragment);
                 return true;
             case R.id.action_load_devices:
                 enterUriToLoad();
@@ -88,7 +81,7 @@ public class AddressListFragment extends Fragment
 
     private enum AddressAction {
         ACTION_LOAD,
-        ACTION_SHARE
+        ACTION_SAVE
     }
 
     private AddressAction mAction;
@@ -100,7 +93,7 @@ public class AddressListFragment extends Fragment
     ) {
         binding = FragmentAddressListBinding.inflate(inflater, container, false);
         lgwSettings = LgwSettings.getSettings(getContext());
-        recyclerViewDeviceAddress = binding.recyclerViewDeviceAddress;
+        recyclerViewDeviceAddress = binding.recyclerViewPayload;
         recyclerViewDeviceAddress.setLayoutManager(new LinearLayoutManager(getContext()));
         refreshAdapter();
         return binding.getRoot();
@@ -114,7 +107,6 @@ public class AddressListFragment extends Fragment
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         addressItemViewModel = new ViewModelProvider(requireActivity()).get(AddressItemViewModel.class);
-
         MenuHost menuHost = requireActivity();
         menuHost.addMenuProvider(this, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
@@ -150,9 +142,9 @@ public class AddressListFragment extends Fragment
                 lgwSettings.save();
                 AddressLoader loader = new AddressLoader(value, this);
                 break;
-            case ACTION_SHARE:
+            case ACTION_SAVE:
                 // save
-                lgwSettings.setShareLastUri(value);
+                lgwSettings.setSaveLastUri(value);
                 lgwSettings.save();
                 break;
         }

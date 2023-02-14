@@ -1,4 +1,4 @@
-package com.commandus.gui;
+package com.commandus.lgw;
 
 import android.app.Dialog;
 import android.content.Context;
@@ -8,9 +8,6 @@ import android.widget.EditText;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
-
-import com.commandus.lgw.LgwSettings;
-import com.commandus.lgw.R;
 
 public class EnterUriDialog extends DialogFragment {
     private final String mLastUri;

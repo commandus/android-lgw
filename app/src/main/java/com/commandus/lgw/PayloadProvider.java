@@ -87,6 +87,38 @@ public class PayloadProvider extends ContentProvider {
 
     static private HashMap<String, String> PROJECTION_MAP;
 
+    public static String toJson(Context context) {
+        PayloadProvider.DatabaseHelper dbHelper = new PayloadProvider.DatabaseHelper(context);
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor cursor = db.rawQuery(SELECT_PREFIX + " FROM " + TABLE_NAME + " ORDER BY " + FN_RECEIVED,null);
+        StringBuilder b = new StringBuilder();
+        b.append("[");
+        boolean isFirst = true;
+        if (cursor.moveToFirst()) {
+            while (true) {
+                if (isFirst)
+                    isFirst = false;
+                else
+                    b.append(", ");
+                Payload r = new Payload(
+                    cursor.getString(F_DEVEUI),
+                    cursor.getString(F_DEVNAME),
+                    cursor.getString(F_PAYLOAD),
+                    cursor.getInt(F_FREQUENCY),
+                    cursor.getInt(F_RSSI),
+                    cursor.getFloat(F_LSNR)
+                );
+                b.append(r.toJson());
+                if (!cursor.moveToNext())
+                    break;
+            }
+        }
+        b.append("]");
+        cursor.close();
+        db.close();
+        return b.toString();
+    }
+
     private static class DatabaseHelper extends SQLiteOpenHelper {
         DatabaseHelper(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);

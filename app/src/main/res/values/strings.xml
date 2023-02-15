@@ -5,6 +5,7 @@
     <string name="cancel">Cancel</string>
     <string name="label_disconnected">Disconnected</string>
     <string name="label_connected">Connected</string>
+    <string name="msg_connected">Connected. Toggle gateway switch on</string>
     <string name="gateway_on">On</string>
     <string name="gateway_off">Off</string>
     <string name="title_activity_devices">DevicesActivity</string>
@@ -25,6 +26,7 @@
     <string name="label_device_new_device_state"></string>
     <string name="label_usb_gateway">USB gateway</string>
     <string name="label_running">Running</string>
+    <string name="msg_running">Gateway running. Do not unplug USB gateway until switch off!</string>
     <string name="label_stopped">Stopped</string>
     <string name="label_region">Region</string>
     <string name="label_zero">0</string>
@@ -61,11 +63,13 @@
     <string name="action_preferences">Preferences</string>
     <string name="msg_gateway_identifier">Gateway identifier</string>
     <string name="msg_gateway_id_copied">Gateway ID copied to clipboard</string>
+    <string name="msg_payload_copied">Payload copied to clipboard</string>
+    <string name="msg_eui_copied">EUI copied to clipboard</string>
     <string name="title_activity_settings">Settings</string>
 
     <!-- Payload activity -->
     <string name="title_activity_payload">Payload</string>
-    <string name="payload_list_fragment_label">Payload list</string>
+    <string name="payload_list_fragment_label">Payload</string>
     <string name="payload_item_fragment_label">Payload details</string>
     <string name="action_payload">Payload</string>
 
@@ -82,8 +86,12 @@
     <string name="label_payload_item_received">Recevied</string>
     <string name="label_payload_item_name">Name</string>
     <string name="label_payload_item_payload">Payload</string>
-    <string name="label_payload_item_frequency">Frequency, Hz</string>
+    <string name="label_payload_item_frequency">Frequency</string>
     <string name="label_payload_item_rssi">RSSI</string>
     <string name="label_payload_item_lsnr">LSNR</string>
+    <string name="msg_abp_addresses">ABP addresses </string>
+    <string name="msg_share_payload">Payload </string>
+    <string name="msg_usb_attached">USB device attached</string>
+    <string name="msg_usb_detached">USB device detached</string>
 
 </resources>

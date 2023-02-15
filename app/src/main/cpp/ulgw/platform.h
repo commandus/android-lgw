@@ -23,9 +23,9 @@
 #endif
 #endif
 
-#define SWAP_BYTES_2(x) __swap16(x)
-#define SWAP_BYTES_4(x) __swap32(x)
-#define SWAP_BYTES_8(x) __swap64(x)
+#define SWAP_BYTES_2(x) be16toh(x)
+#define SWAP_BYTES_4(x) be32toh(x)
+#define SWAP_BYTES_8(x) be64toh(x)
 
 #if BYTE_ORDER == BIG_ENDIAN
 #define NTOH2(x) (x)

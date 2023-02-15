@@ -16,6 +16,7 @@
 #include "AndroidIdentityService.h"
 
 // @see https://developer.android.com/training/articles/perf-jni
+
 static void append2logfile(const char *fmt) {
     __android_log_print(ANDROID_LOG_DEBUG, "append2logfile", "%s", fmt);
     FILE *f = fopen("/storage/emulated/0/Android/data/com.commandus.lgw/files/Documents/lgw.log", "a+");
@@ -112,7 +113,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LGW_setPayloadListener(
         android_LGW_onIdentityGet = env->GetMethodID(loggerCls, "onIdentityGet", "(Ljava/lang/String;)Lcom/commandus/lgw/LoraDeviceAddress;");
         android_LGW_onIdentityGetNetworkIdentity = env->GetMethodID(loggerCls, "onGetNetworkIdentity", "(Ljava/lang/String;)Lcom/commandus/lgw/LoraDeviceAddress;");
 
-        payloadCnstr = env->GetMethodID(payloadCls, "<init>", "(Ljava/lang/String;IIF)V");
+        payloadCnstr = env->GetMethodID(payloadCls, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIF)V");
     } else {
         if (loggerObject) {
             env->DeleteGlobalRef(loggerObject);
@@ -176,7 +177,6 @@ static JNIEnv *getJavaEnv(bool &requireDetach) {
     }
    return jEnv;
 }
-
 
 extern "C" void printf_c1(
     const char *fmt
@@ -288,9 +288,11 @@ public:
             return;
         if (payloadCls) {
             if (payloadCnstr) {
-                jstring hexPayload = jEnv->NewStringUTF(hexString(value.payload).c_str());
-                jobject jPayload = jEnv->NewObject(payloadCls, payloadCnstr, hexPayload,
-                                                   value.frequency, value.rssi, value.lsnr);
+                jstring jEui = jEnv->NewStringUTF(value.eui.c_str());
+                jstring jName = jEnv->NewStringUTF(value.devName.c_str());
+                jstring jHexPayload = jEnv->NewStringUTF(hexString(value.payload).c_str());
+                jobject jPayload = jEnv->NewObject(payloadCls, payloadCnstr,
+                    jEui, jName, jHexPayload, value.frequency, value.rssi, value.lsnr);
                 jEnv->CallVoidMethod(loggerObject, android_LGW_onReceive, jPayload);
             }
         }
@@ -310,11 +312,13 @@ public:
             return;
         jobject jPayload;
         if (payloadCls) {
-            jmethodID cnstr = jEnv->GetMethodID(payloadCls, "<init>", "(Ljava/lang/String;IIF)V");
+            jmethodID cnstr = jEnv->GetMethodID(payloadCls, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIF)V");
             if (cnstr) {
-                jstring hexPayload = jEnv->NewStringUTF(hexString(value.payload).c_str());
-                jPayload = jEnv->NewObject(payloadCls, cnstr, hexPayload,
-                                           value.frequency, value.rssi, value.lsnr);
+                jstring jEui = jEnv->NewStringUTF(value.eui.c_str());
+                jstring jName = jEnv->NewStringUTF(value.devName.c_str());
+                jstring jHexPayload = jEnv->NewStringUTF(hexString(value.payload).c_str());
+                jPayload = jEnv->NewObject(payloadCls, cnstr,
+                    jEui, jName, jHexPayload, value.frequency, value.rssi, value.lsnr);
                 jEnv->CallVoidMethod(loggerObject, android_LGW_onValue, jPayload);
             }
         }
@@ -337,13 +341,14 @@ public:
         if (!jEnv)
             return 0;
         std::string a = DEVADDR2string(devaddr);
-append2logfile("identityGet addr");
-        append2logfile(a.c_str());
-
         jstring ja = jEnv->NewStringUTF(a.c_str());
         jobject r = jEnv->CallObjectMethod(loggerObject, android_LGW_onIdentityGet, ja);
-        if (!r)
+        if (!r) {
+            jEnv->DeleteLocalRef(ja);
+            if (requireDetach)
+                jVM->DetachCurrentThread();
             return ERR_CODE_DEVICE_ADDRESS_NOTFOUND;
+        }
 
         jclass jLoraAddressCls = jEnv->GetObjectClass(r);
         // String addr not used
@@ -356,7 +361,9 @@ append2logfile("identityGet addr");
         jclass jDevEUICls = jEnv->GetObjectClass(joDevEui);
         const jmethodID jmDevEuiToString = jEnv->GetMethodID(jDevEUICls, "toString", "()Ljava/lang/String;");
         jstring jsDevEui = static_cast<jstring>(jEnv->CallObjectMethod(joDevEui, jmDevEuiToString));
-        retVal.setName(jstring2string(jEnv, jsDevEui));
+
+        retVal.setEUIString(jstring2string(jEnv, jsDevEui));
+
         jEnv->DeleteLocalRef(joDevEui);
         jEnv->DeleteLocalRef(jsDevEui);
         // KEY128 nwkSKey
@@ -385,7 +392,6 @@ append2logfile("identityGet addr");
 
         if (requireDetach)
             jVM->DetachCurrentThread();
-append2logfile("identityGet end");
         return 0;
     }
 

@@ -14,12 +14,13 @@
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_share_devices"
-        android:orderInCategory="300"
+        android:orderInCategory="200"
         android:title="@string/action_share_devices"
+        android:icon="@android:drawable/ic_menu_share"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_clear_devices"
-        android:orderInCategory="400"
+        android:orderInCategory="200"
         android:icon="@android:drawable/ic_delete"
         android:title="@string/action_clear_devices"
         app:showAsAction="ifRoom" />

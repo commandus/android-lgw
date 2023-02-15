@@ -53,6 +53,16 @@ void onUpstream(
             int2deveui(prefix.mac, listener->config->gateway()->gatewayId);
             // construct Semtech packet
             SemtechUDPPacket p(prefix, metadata, payload, listener->packetListener->identityService);
+            if (listener->onLog) {
+                Payload pl;
+                pl.eui = p.getDeviceEUI();
+                pl.received = receivedTime.tv_sec;
+                pl.frequency = metadata->freq;
+                pl.rssi = metadata->rssi;
+                pl.lsnr = metadata->lsnr;
+                pl.payload = p.payload;
+                listener->onLog->onValue(pl);
+            }
             if (p.errcode)
                 listener->packetListener->handler->putUnidentified(receivedTime, p);
             else

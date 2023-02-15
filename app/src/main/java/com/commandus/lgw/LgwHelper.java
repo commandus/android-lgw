@@ -1,5 +1,10 @@
 package com.commandus.lgw;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.widget.Toast;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Date;
@@ -29,5 +34,10 @@ public class LgwHelper {
         }
     }
 
-
+    public static void copy2clipboard(Context context, String header, String value, String hint) {
+        ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = ClipData.newPlainText(header, value);
+        clipboard.setPrimaryClip(clip);
+        Toast.makeText(context, hint, Toast.LENGTH_LONG).show();
+    }
 }

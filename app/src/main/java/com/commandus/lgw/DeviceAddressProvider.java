@@ -239,12 +239,12 @@ public class DeviceAddressProvider extends ContentProvider {
         if (!cursor.moveToFirst())
             return null;
         LoraDeviceAddress r = new LoraDeviceAddress(
-                cursor.getInt(F_ID),
-                cursor.getString(F_ADDR),
-                cursor.getString(F_DEVEUI),
-                cursor.getString(F_NWKSKEY),
-                cursor.getString(F_APPSKEY),
-                cursor.getString(F_NAME)
+            cursor.getInt(F_ID),
+            cursor.getString(F_ADDR),
+            cursor.getString(F_DEVEUI),
+            cursor.getString(F_NWKSKEY),
+            cursor.getString(F_APPSKEY),
+            cursor.getString(F_NAME)
         );
         cursor.close();
         db.close();

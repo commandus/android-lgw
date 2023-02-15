@@ -1,8 +1,6 @@
 package com.commandus.lgw;
 
 import android.content.BroadcastReceiver;
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -20,7 +18,6 @@ import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -174,10 +171,8 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
         switch (id) {
             case R.id.action_gateway:
-                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                ClipData clip = ClipData.newPlainText(getString(R.string.msg_gateway_identifier), gwId);
-                clipboard.setPrimaryClip(clip);
-                Toast.makeText(this, getString(R.string.msg_gateway_id_copied), Toast.LENGTH_LONG).show();
+                LgwHelper.copy2clipboard(this, getString(R.string.msg_gateway_identifier),
+                        gwId, getString(R.string.msg_gateway_id_copied));
                 return true;
             case R.id.action_preferences:
                 Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
@@ -282,14 +277,14 @@ public class MainActivity extends AppCompatActivity
         }
         if (ACTION_USB_ATTACHED.equals(action)) {
             if (SerialPort.hasDevice(this)) {
-                onInfo("USB device attached");
+                onInfo(getString(R.string.msg_usb_attached));
                 // soundPool.play(SOUND_ON, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
                 connectUSB();
             }
         }
         if (ACTION_USB_DETACHED.equals(action)) {
             // soundPool.play(SOUND_OFF, 1.0f, 1.0f, SOUND_PRIORITY_1, 0, 1.0f);
-            onInfo("USB device detached");
+            onInfo(getString(R.string.msg_usb_detached));
             disconnectUSB();
         }
     }
@@ -303,7 +298,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onStarted(String gatewayId, String regionName, int regionIndex) {
-        pushMessage(getString(R.string.label_running));
+        pushMessage(getString(R.string.msg_running));
         reflectGatewayRunning(true);
     }
 
@@ -370,13 +365,12 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onInfo(String msg)
     {
-        Log.d("main", msg);
         pushMessage(msg);
     }
 
     @Override
     public void onConnected(boolean on) {
-        pushMessage(getString(R.string.label_connected));
+        pushMessage(getString(R.string.msg_connected));
         reflectUSBConnected(on);
     }
 

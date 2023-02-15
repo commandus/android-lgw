@@ -28,12 +28,14 @@
         android:id="@+id/text_view_payload_item_received"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textSize="@dimen/lgwAddressListTextSize"
         app:layout_constraintTop_toBottomOf="@id/label_payload_item_received"
         />
     <TextView
         android:id="@+id/label_address_item_eui"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/formMargin"
         app:layout_constraintTop_toBottomOf="@id/text_view_payload_item_received"
         app:layout_constraintStart_toStartOf="parent"
         android:text="@string/label_address_item_eui"
@@ -42,12 +44,14 @@
         android:id="@+id/text_view_payload_item_eui"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textSize="@dimen/lgwAddressListTextSize"
         app:layout_constraintTop_toBottomOf="@id/label_address_item_eui"
         />
     <TextView
         android:id="@+id/label_payload_item_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/formMargin"
         app:layout_constraintTop_toBottomOf="@id/text_view_payload_item_eui"
         app:layout_constraintStart_toStartOf="parent"
         android:text="@string/label_payload_item_name"
@@ -56,11 +60,13 @@
         android:id="@+id/text_view_payload_item_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textSize="@dimen/lgwAddressListTextSize"
         app:layout_constraintTop_toBottomOf="@id/label_payload_item_name" />
     <TextView
         android:id="@+id/label_payload_item_payload"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/formMargin"
         app:layout_constraintTop_toBottomOf="@id/text_view_payload_item_name"
         app:layout_constraintStart_toStartOf="parent"
         android:text="@string/label_payload_item_payload"
@@ -69,12 +75,14 @@
         android:id="@+id/text_view_payload_item_payload"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textSize="@dimen/lgwAddressListTextSize"
         app:layout_constraintTop_toBottomOf="@id/label_payload_item_payload"
         />
     <TextView
         android:id="@+id/label_payload_item_frequency"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/formMargin"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/text_view_payload_item_payload"
         android:text="@string/label_payload_item_frequency"
@@ -83,12 +91,14 @@
         android:id="@+id/text_view_payload_item_frequency"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textSize="@dimen/lgwAddressListTextSize"
         app:layout_constraintTop_toBottomOf="@id/label_payload_item_frequency"
     />
     <TextView
         android:id="@+id/label_payload_item_rssi"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/formMargin"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/text_view_payload_item_frequency"
         android:text="@string/label_payload_item_rssi"
@@ -97,12 +107,14 @@
         android:id="@+id/text_view_payload_item_rssi"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textSize="@dimen/lgwAddressListTextSize"
         app:layout_constraintTop_toBottomOf="@id/label_payload_item_rssi"
         />
     <TextView
         android:id="@+id/label_payload_item_lsnr"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/formMargin"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/text_view_payload_item_rssi"
         android:text="@string/label_payload_item_lsnr"
@@ -112,6 +124,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/label_payload_item_lsnr"
+        android:textSize="@dimen/lgwAddressListTextSize"
         />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

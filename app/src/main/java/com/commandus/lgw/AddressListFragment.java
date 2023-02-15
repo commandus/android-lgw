@@ -127,7 +127,7 @@ public class AddressListFragment extends Fragment
         Intent sendIntent = new Intent();
         sendIntent.setAction(Intent.ACTION_SEND);
         sendIntent.putExtra(Intent.EXTRA_TEXT, DeviceAddressProvider.toJson(getContext()));
-        sendIntent.putExtra(Intent.EXTRA_SUBJECT, "ABP addresses " + new Date().toString());
+        sendIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.msg_abp_addresses) + new Date().toString());
         sendIntent.setType("text/plain");
         Intent shareIntent = Intent.createChooser(sendIntent, null);
         startActivity(shareIntent);

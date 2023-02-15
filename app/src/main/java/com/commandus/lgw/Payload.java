@@ -50,20 +50,21 @@ public class Payload {
     }
 
     public Payload(
+        String devEui,
+        String devName,
         String hexPayload,
         int frequency,
         int rssi,
         float lsnr
     ) {
         id = 0L;
+        this.devEui = devEui;
+        this.devName = devName;
         this.received = new Date();
-        this.devEui = "";
-        this.devName = "";
-        this.hexPayload = "";
+        this.hexPayload = hexPayload;
         this.frequency = frequency;
         this.rssi = rssi;
         this.lsnr = lsnr;
-        this.hexPayload = hexPayload;
     }
 
     public Payload(Payload p) {
@@ -79,8 +80,8 @@ public class Payload {
 
     public Payload(
         long id,
-        long receeived,
-        String devEmui,
+        long received,
+        String devEui,
         String devName,
         String hexPayload,
         int frequency,
@@ -88,8 +89,8 @@ public class Payload {
         float lsnr
     ) {
         this.id = id;
-        this.received = new Date(receeived * 1000L);
-        this.devEui = devEmui;
+        this.received = new Date(received * 1000L);
+        this.devEui = devEui;
         this.devName = devName;
         this.hexPayload = hexPayload;
         this.frequency = frequency;
@@ -101,16 +102,7 @@ public class Payload {
     @NonNull
     @Override
     public String toString() {
-        return "{" +
-            "\"" + FIELD_NAMES[0] + "\": " + id +
-            ", \"" + FIELD_NAMES[1] + "\": \"" + received.toString() +
-            "\", \"" + FIELD_NAMES[2] + "\": \"" + devEui +
-            "\", \"" + FIELD_NAMES[3] + "\": \"" + devName +
-            "\", \"" + FIELD_NAMES[4] + "\": \"" + hexPayload +
-            "\", \"" + FIELD_NAMES[5] + "\": " + frequency +
-            ", \"" + FIELD_NAMES[6] + "\": \"" + rssi +
-            ", \"" + FIELD_NAMES[7] + "\": \"" + lsnr +
-        "}";
+        return toJson();
     }
 
     public ContentValues getContentValues() {
@@ -125,5 +117,18 @@ public class Payload {
         r.put(FIELD_NAMES[6], rssi);
         r.put(FIELD_NAMES[7], lsnr);
         return r;
+    }
+
+    public String toJson() {
+        String sid = id <= 0 ? "" : "\"" + FIELD_NAMES[0] + "\": " + id + ", ";
+        return "{" + sid +
+            "\"" + FIELD_NAMES[1] + "\": " + received.getTime() / 1000L +
+            ", \"" + FIELD_NAMES[2] + "\": \"" + devEui +
+            "\", \"" + FIELD_NAMES[3] + "\": \"" + devName +
+            "\", \"" + FIELD_NAMES[4] + "\": \"" + hexPayload +
+            "\", \"" + FIELD_NAMES[5] + "\": " + frequency +
+            ", \"" + FIELD_NAMES[6] + "\": \"" + rssi +
+            ", \"" + FIELD_NAMES[7] + "\": \"" + lsnr +
+        "}";
     }
 }

@@ -2,11 +2,7 @@ package com.commandus.lgw;
 
 import android.os.Bundle;
 
-import com.google.android.material.snackbar.Snackbar;
-
 import androidx.appcompat.app.AppCompatActivity;
-
-import android.view.View;
 
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
@@ -44,7 +40,7 @@ public class PayloadActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        Fragment fragmentList = getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment_content_payload);
+        Fragment fragmentList = getSupportFragmentManager().findFragmentById(R.id.PayloadListFragment);
         if (fragmentList != null && fragmentList.isVisible()) {
             finish();
         } else {

@@ -5,12 +5,12 @@
         android:id="@+id/action_share_payload"
         android:orderInCategory="100"
         android:icon="@android:drawable/ic_menu_share"
-        android:title="@string/action_share_devices"
+        android:title="@string/label_share_devices"
         app:showAsAction="always" />
     <item
         android:id="@+id/action_clear_payload"
         android:orderInCategory="200"
         android:icon="@android:drawable/ic_delete"
-        android:title="@string/action_clear_devices"
+        android:title="@string/label_clear_devices"
         app:showAsAction="ifRoom" />
 </menu>

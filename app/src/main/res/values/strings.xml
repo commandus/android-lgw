@@ -43,24 +43,24 @@
     <string name="label_share">Share</string>
     <string name="enter_uri_dialog_title">Enter URL</string>
     <string name="load">Load</string>
-    <string name="action_add_device">Add</string>
-    <string name="action_load_devices">Load</string>
-    <string name="action_share_devices">Share</string>
-    <string name="action_clear_devices">Remove all</string>
+    <string name="label_add_device">Add</string>
+    <string name="label_load_devices">Load</string>
+    <string name="label_share_devices">Share</string>
+    <string name="label_clear_devices">Remove all</string>
     <string name="confirm_delete_dialog_title">Confirm delete</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="msg_confirm_to_delete">Are you sure you want to delete?</string>
-    <string name="action_save_device">Save</string>
-    <string name="action_cancel_edit_device">Cancel</string>
-    <string name="action_delete_device">Delete</string>
+    <string name="label_save_device">Save</string>
+    <string name="label_cancel_edit_device">Cancel</string>
+    <string name="label_delete_device">Delete</string>
     <string name="label_address_item_addr">Address</string>
     <string name="label_address_item_eui">EUI</string>
     <string name="label_address_item_nwkskey">NwkSKey</string>
     <string name="label_address_item_appskey">AppSKey</string>
     <string name="label_address_item_name">Name</string>
-    <string name="action_gateway">Gateway</string>
-    <string name="action_preferences">Preferences</string>
+    <string name="label_gateway">Gateway</string>
+    <string name="label_preferences">Preferences</string>
     <string name="msg_gateway_identifier">Gateway identifier</string>
     <string name="msg_gateway_id_copied">Gateway ID copied to clipboard</string>
     <string name="msg_payload_copied">Payload copied to clipboard</string>
@@ -71,7 +71,7 @@
     <string name="title_activity_payload">Payload</string>
     <string name="payload_list_fragment_label">Payload</string>
     <string name="payload_item_fragment_label">Payload details</string>
-    <string name="action_payload">Payload</string>
+    <string name="label_payload">Payload</string>
 
     <!-- Preference -->
     <string name="header_gateway">Send payload</string>
@@ -93,5 +93,7 @@
     <string name="msg_share_payload">Payload </string>
     <string name="msg_usb_attached">USB device attached</string>
     <string name="msg_usb_detached">USB device detached</string>
+    <string name="msg_no_payload"><![CDATA[< no payload >]]></string>
+    <string name="title_auto_start">Auto-start</string>
 
 </resources>

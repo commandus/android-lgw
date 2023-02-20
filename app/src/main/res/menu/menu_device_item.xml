@@ -4,11 +4,11 @@
     <item
         android:id="@+id/action_save_device"
         android:orderInCategory="100"
-        android:title="@string/action_save_device"
+        android:title="@string/label_save_device"
         app:showAsAction="always" />
     <item
         android:id="@+id/action_delete_device"
         android:orderInCategory="300"
-        android:title="@string/action_delete_device"
+        android:title="@string/label_delete_device"
         app:showAsAction="ifRoom" />
 </menu>

@@ -4,24 +4,24 @@
     <item
         android:id="@+id/action_add_device"
         android:orderInCategory="100"
-        android:title="@string/action_add_device"
+        android:title="@string/label_add_device"
         android:icon="@android:drawable/ic_menu_add"
         app:showAsAction="always" />
     <item
         android:id="@+id/action_load_devices"
         android:orderInCategory="200"
-        android:title="@string/action_load_devices"
+        android:title="@string/label_load_devices"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_share_devices"
         android:orderInCategory="200"
-        android:title="@string/action_share_devices"
+        android:title="@string/label_share_devices"
         android:icon="@android:drawable/ic_menu_share"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_clear_devices"
         android:orderInCategory="200"
         android:icon="@android:drawable/ic_delete"
-        android:title="@string/action_clear_devices"
+        android:title="@string/label_clear_devices"
         app:showAsAction="ifRoom" />
 </menu>

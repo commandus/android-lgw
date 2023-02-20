@@ -17,6 +17,7 @@ public class LgwSettings {
     private static final String PREF_REGION_INDEX = "region_index";
     private static final String PREF_LOAD_LAST_URI = "load_last_uri";
     private static final String PREF_SHARE_LAST_URI = "share_last_uri";
+    private static final String PREF_AUTO_START = "auto_start";
     private static final String DEF_CONTENT_PROVIDER_URI = "content://lora.data/payload";
     private static LgwSettings mLgwSettings = null;
     private final Context mContext;
@@ -28,6 +29,7 @@ public class LgwSettings {
     private String mContentProviderUri;
     private boolean mKeepScreenOn;
     private boolean mStartAtBoot;
+    private boolean mAutoStart;
 
     public String getTheme() {
         return mTheme;
@@ -38,8 +40,15 @@ public class LgwSettings {
     public boolean getStartAtBoot() {
         return mStartAtBoot;
     }
+    public boolean getAutoStart() {
+        return mAutoStart;
+    }
     public String getContentProviderUri() {
         return mContentProviderUri;
+    }
+
+    public boolean isFakeDevice() {
+        return true;
     }
 
     /**
@@ -50,6 +59,7 @@ public class LgwSettings {
         mTheme = prefs.getString(PREF_THEME, mContext.getString(R.string.theme_name_bright));
         mKeepScreenOn = prefs.getBoolean(PREF_KEEP_SCREEN_ON, false);
         mStartAtBoot = prefs.getBoolean(PREF_START_AT_BOOT, false);
+        mAutoStart = prefs.getBoolean(PREF_AUTO_START, false);
         mContentProviderUri = prefs.getString(PREF_CONTENT_PROVIDER_URI, DEF_CONTENT_PROVIDER_URI);
         mRegionIndex = prefs.getInt(PREF_REGION_INDEX, 0);
         mLoadLastUri = prefs.getString(PREF_LOAD_LAST_URI, "");
@@ -75,6 +85,7 @@ public class LgwSettings {
         editor.putString(PREF_THEME, mTheme);
         editor.putBoolean(PREF_KEEP_SCREEN_ON, mKeepScreenOn);
         editor.putBoolean(PREF_START_AT_BOOT, mStartAtBoot);
+        editor.putBoolean(PREF_AUTO_START, mAutoStart);
         editor.putString(PREF_CONTENT_PROVIDER_URI, mContentProviderUri);
         editor.putInt(PREF_REGION_INDEX, mRegionIndex);
         editor.putString(PREF_LOAD_LAST_URI, mLoadLastUri);

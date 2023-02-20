@@ -27,7 +27,7 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
         public ViewHolder(View view) {
             super(view);
             // Define click listener for the ViewHolder's View
-            textView = view.findViewById(R.id.textViewListItemAddress);
+            textView = view.findViewById(R.id.textViewListItemPayload);
             view.setOnClickListener(this);
         }
 
@@ -38,16 +38,18 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
                 adapter.mSelection.onSelect(id);
         }
 
-        public void set(int position, long id, String name) {
+        public void set(int position, long id, String payloadHex, String defaultValue) {
             this.id = id;
-            textView.setText(name);
+            if (payloadHex == null || payloadHex.isEmpty())
+                payloadHex = defaultValue;
+            textView.setText(payloadHex);
         }
     }
 
     // Create new views (invoked by the layout manager)
-    public PayloadAdapter(RecyclerView rv, ItemSelection addressSelection) {
+    public PayloadAdapter(RecyclerView rv, ItemSelection selection) {
         recyclerView = rv;
-        mSelection = addressSelection;
+        mSelection = selection;
         mCursor = recyclerView.getContext().getContentResolver().query(
                 PayloadProvider.CONTENT_URI_PAYLOAD, PayloadProvider.PROJECTION, null, null, null);
     }
@@ -69,7 +71,9 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
         // Get element from your dataset at this position and replace the
         // contents of the view with that element
         mCursor.moveToPosition(position);
-        viewHolder.set(position, mCursor.getLong(PayloadProvider.F_ID), mCursor.getString(PayloadProvider.F_PAYLOAD));
+        viewHolder.set(position, mCursor.getLong(PayloadProvider.F_ID),
+                mCursor.getString(PayloadProvider.F_PAYLOAD),
+                recyclerView.getContext().getString(R.string.msg_no_payload));
     }
 
     // Return the size of your dataset (invoked by the layout manager)

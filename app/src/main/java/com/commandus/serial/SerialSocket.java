@@ -118,7 +118,7 @@ public class SerialSocket {
             public void onReceive(Context context, Intent intent) {
                 disconnect(); // disconnect now, else would be queued until UI re-attached
                 if (listener != null)
-                    listener.onDisconnect();
+                    listener.onDisconnectUsb();
             }
         };
     }

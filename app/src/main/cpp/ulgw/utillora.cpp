@@ -1271,7 +1271,7 @@ void string2DEVEUI(
 	memmove(&retval, str.c_str(), len);
 	if (len < sizeof(DEVEUI))
 		memset(&retval + len, 0, sizeof(DEVEUI) - len);
-	*((uint64_t*) &retval) = NTOH8(*((uint64_t*) &retval));
+	*((uint64_t*) &retval) = SWAP_BYTES_8(*((uint64_t*) &retval));
 }
 
 void string2KEY(
@@ -1343,7 +1343,8 @@ std::string DEVADDR2string(
 {
 	uint32_t v;
 	memmove(&v, &value, sizeof(v));
-	// hex string is MSB first, no swap
+	// hex string is MSB first
+    v = SWAP_BYTES_4(v);
 	return hexString(&v, sizeof(v));
 }
 

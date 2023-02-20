@@ -20,6 +20,9 @@
     </PreferenceCategory>
     <PreferenceCategory app:title="@string/header_service">
         <SwitchPreferenceCompat
+            app:key="auto_start"
+            app:title="@string/title_auto_start" />
+        <SwitchPreferenceCompat
             app:key="start_at_boot"
             app:title="@string/title_start_at_boot" />
     </PreferenceCategory>

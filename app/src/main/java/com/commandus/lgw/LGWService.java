@@ -35,25 +35,35 @@ public class LGWService extends Service implements
      * @return >0 file descriptor, 0- no USB device found, <0- system error while open port
      */
     public int getUSBPortFileDescriptor() {
-        if (!connected || usbSerialSocket == null)
+        if (!isUsbConnected || usbSerialSocket == null)
             return 0;
         return usbSerialSocket.serialPort.getPortNumber();
     }
 
     @Override
-    public void onDisconnect() {
+    public void onDisconnectUsb() {
         // device disconnected
-        onInfo("loraGatewayListener disconnect USB serial socket");
-        connected = false; // ignore data,errors while disconnecting
+        // try to shutdown
+        stopGateway();
+        showError(0, "loraGatewayListener disconnect USB serial socket");
+        isUsbConnected = false; // ignore data,errors while disconnecting
         cancelNotification();
         if (usbSerialSocket != null) {
             usbSerialSocket = null;
         }
-        onDisconnected();
+        onUsbDisconnected();
     }
 
     public void setContentProviderUri(String contentProvider) {
         mContentProviderUri = Uri.parse(contentProvider);
+    }
+
+    public boolean checkIsUSBConnected() {
+        if (isUsbConnected)
+            return true;
+        if (SerialPort.hasDevice(this))
+            usbSerialSocket = SerialPort.open(this);
+        return (usbSerialSocket != null);
     }
 
     class LGWServiceBinder extends Binder {
@@ -67,7 +77,7 @@ public class LGWService extends Service implements
     private LGWListener listener;
 
     public LGW lgw;
-    public boolean connected;
+    public boolean isUsbConnected = false;
     public boolean running;
     public int receiveCount;
     public int valueCount;
@@ -101,25 +111,25 @@ public class LGWService extends Service implements
      * @return false- permission denied
      */
     public boolean connectSerialPort() {
-        onInfo(getString(R.string.msg_connecting_usb_serial_port));
+        showError(0, getString(R.string.msg_connecting_usb_serial_port));
         usbSerialSocket = SerialPort.open(this);
         if (usbSerialSocket == null) {
-            onInfo(getString(R.string.err_open_serial_port) + SerialPort.reason);
+            showError(0, getString(R.string.err_open_serial_port) + SerialPort.reason);
             return false;
         }
-        onConnected(usbSerialSocket.connect(this));
-        return connected;
+        onUsbConnected(usbSerialSocket.connect(this));
+        return isUsbConnected;
     }
 
     public void disconnectSerialPort() {
-        onInfo("loraGatewayListener disconnect USB serial socket");
-        connected = false; // ignore data,errors while disconnecting
+        showError(0, "loraGatewayListener disconnect USB serial socket");
+        isUsbConnected = false; // ignore data,errors while disconnecting
         cancelNotification();
         if (usbSerialSocket != null) {
             SerialPort.close(usbSerialSocket);
             usbSerialSocket = null;
         }
-        onDisconnected();
+        onUsbDisconnected();
     }
 
     public void attach(LGWListener listener) {
@@ -133,13 +143,22 @@ public class LGWService extends Service implements
 
     @Override
     public void onInfo(
+        int severity,
         String message
     ) {
+        if (message.startsWith("Error")) {
+            severity = 1;
+            stopGateway();
+        }
+        showError(severity, message);
+    }
+
+    private void showError(int severity, String message) {
         synchronized (this) {
             if (listener != null) {
                 mainLooper.post(() -> {
                     if (listener != null) {
-                        listener.onInfo(message);
+                        listener.onInfo(severity, message);
                     }
                 });
             }
@@ -147,25 +166,23 @@ public class LGWService extends Service implements
     }
 
     @Override
-    public void onConnected(boolean on) {
-        connected = on;
+    public void onUsbConnected(boolean on) {
+        isUsbConnected = on;
         synchronized (this) {
             mainLooper.post(() -> {
                 if (listener != null) {
-                    listener.onConnected(on);
+                    listener.onUsbConnected(on);
                 }
             });
         }
     }
 
     @Override
-    public void onDisconnected() {
-        connected = false;
-        running = false;
+    public void onUsbDisconnected() {
         synchronized (this) {
             mainLooper.post(() -> {
                 if (listener != null) {
-                    listener.onDisconnected();
+                    listener.onUsbDisconnected();
                 }
             });
         }
@@ -282,10 +299,11 @@ public class LGWService extends Service implements
             return false;
         lgw.setPayloadListener(this);
         return lgw.start(regionIndex, Settings.Secure.getString(getContentResolver(),
-                Settings.Secure.ANDROID_ID), verbosity) == 0;
+            Settings.Secure.ANDROID_ID), verbosity) == 0;
     }
 
     void stopGateway() {
+        running = false;
         if (lgw == null)
             return;
         lgw.stop();

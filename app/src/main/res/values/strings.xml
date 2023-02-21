@@ -26,7 +26,8 @@
     <string name="label_device_new_device_state"></string>
     <string name="label_usb_gateway">USB gateway</string>
     <string name="label_running">Running</string>
-    <string name="msg_running">Gateway running. Do not unplug USB gateway until switch off!</string>
+    <string name="msg_running">Gateway running, region </string>
+    <string name="msg_running_warning">Do not unplug USB gateway until switch off!</string>
     <string name="label_stopped">Stopped</string>
     <string name="label_region">Region</string>
     <string name="label_zero">0</string>

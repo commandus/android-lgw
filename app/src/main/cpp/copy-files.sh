@@ -12,7 +12,7 @@ JITQUEUE_INC_DIR=$RAK_2287/packet_forwarder/inc
 INC_DIR=$DST/packet_forwarder
 mkdir -p $INC_DIR
 
-LORAWAN_NETWORK_SERVER_DIR=~/src/lorawan-network-server
+LORAWAN_NETWORK_SERVER_DIR=~/src/lorawan-network-server-0.2
 DST_ULGW=$DST/ulgw
 mkdir -p $DST_ULGW
 

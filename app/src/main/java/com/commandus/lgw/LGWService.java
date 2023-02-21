@@ -2,6 +2,7 @@ package com.commandus.lgw;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
+import android.content.ContentUris;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Binder;
@@ -63,7 +64,8 @@ public class LGWService extends Service implements
             return true;
         if (SerialPort.hasDevice(this))
             usbSerialSocket = SerialPort.open(this);
-        return (usbSerialSocket != null);
+        isUsbConnected = usbSerialSocket != null;
+        return isUsbConnected;
     }
 
     class LGWServiceBinder extends Binder {
@@ -76,19 +78,20 @@ public class LGWService extends Service implements
     private final IBinder binder;
     private LGWListener listener;
 
-    public LGW lgw;
+    public LoraWanGateway lgw;
     public boolean isUsbConnected = false;
     public boolean running;
     public int receiveCount;
     public int valueCount;
 
-    /**
-     * Lifecylce
-     */
     public LGWService() {
         mainLooper = new Handler(Looper.getMainLooper());
         binder = new LGWServiceBinder();
-        lgw = new LGW();
+        boolean fakeGateway = false;
+        if (fakeGateway)
+            lgw = new LorawanGatewayFake();
+        else
+            lgw = new LorawanGatewayRak2287();
         gatewayEventAdapter = new GatewayEventAdapter();
         receiveCount = 0;
         valueCount = 0;
@@ -113,10 +116,12 @@ public class LGWService extends Service implements
     public boolean connectSerialPort() {
         showError(0, getString(R.string.msg_connecting_usb_serial_port));
         usbSerialSocket = SerialPort.open(this);
-        if (usbSerialSocket == null) {
+        isUsbConnected = usbSerialSocket != null;
+        if (!isUsbConnected) {
             showError(0, getString(R.string.err_open_serial_port) + SerialPort.reason);
             return false;
         }
+
         onUsbConnected(usbSerialSocket.connect(this));
         return isUsbConnected;
     }
@@ -203,6 +208,7 @@ public class LGWService extends Service implements
     @Override
     public void onFinished(String message) {
         running = false;
+        lgw.assignPayloadListener(null);
         synchronized (this) {
             mainLooper.post(() -> {
                 if (listener != null) {
@@ -266,7 +272,10 @@ public class LGWService extends Service implements
     @Override
     public void onValue(Payload payload) {
         valueCount++;
-        sendPayload2ContentProvider(payload);
+        Uri uri = sendPayload2ContentProvider(payload);
+        if (uri == null)
+            return; // smth wrong
+        payload.id = ContentUris.parseId(uri);
         synchronized (this) {
             mainLooper.post(() -> {
                 gatewayEventAdapter.pushPayLoad(payload);
@@ -297,22 +306,20 @@ public class LGWService extends Service implements
     boolean startGateway(int regionIndex, int verbosity) {
         if (lgw == null)
             return false;
-        lgw.setPayloadListener(this);
-        return lgw.start(regionIndex, Settings.Secure.getString(getContentResolver(),
+        lgw.assignPayloadListener(this);
+        return lgw.startGateway(regionIndex, Settings.Secure.getString(getContentResolver(),
             Settings.Secure.ANDROID_ID), verbosity) == 0;
     }
 
     void stopGateway() {
-        running = false;
         if (lgw == null)
             return;
-        lgw.stop();
-        lgw.setPayloadListener(null);
+        lgw.stopGateway();
     }
 
     String[] regionNames() {
         if (lgw == null)
             return null;
-        return lgw.regionNames();
+        return lgw.getRegionNames();
     }
 }

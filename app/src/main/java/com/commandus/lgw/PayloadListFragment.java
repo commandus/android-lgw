@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.core.view.MenuHost;
 import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
@@ -28,6 +29,8 @@ public class PayloadListFragment extends Fragment
     private FragmentPayloadListBinding binding;
     private RecyclerView recyclerViewPayloadList;
     private PayloadItemViewModel payloadItemViewModel;
+    private int mCount;
+    private FragmentActivity menuHost;
 
     @Override
     public View onCreateView(
@@ -43,6 +46,9 @@ public class PayloadListFragment extends Fragment
     private void refreshAdapter() {
         PayloadAdapter payloadAdapter = new PayloadAdapter(recyclerViewPayloadList, this);
         recyclerViewPayloadList.setAdapter(payloadAdapter);
+        mCount = payloadAdapter.getItemCount();
+        if (menuHost != null)
+            menuHost.invalidateMenu();
     }
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
@@ -55,7 +61,7 @@ public class PayloadListFragment extends Fragment
                         .navigate(R.id.action_PayloadListFragment_to_PayloadItemFragment);
             }
         });
-        MenuHost menuHost = requireActivity();
+        menuHost = requireActivity();
         menuHost.addMenuProvider(this, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
 
@@ -75,6 +81,8 @@ public class PayloadListFragment extends Fragment
     @Override
     public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
         menuInflater.inflate(R.menu.menu_payload_list, menu);
+        menu.findItem(R.id.action_share_payload).setEnabled(mCount > 0);
+        menu.findItem(R.id.action_clear_payload).setEnabled(mCount > 0);
     }
 
     @Override

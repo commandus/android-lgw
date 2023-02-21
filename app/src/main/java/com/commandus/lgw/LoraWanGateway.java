@@ -1,26 +1,21 @@
 package com.commandus.lgw;
 
-public class LGW {
-    // Used to load the 'loraGatewayListener' library on application startup.
-    static {
-        System.loadLibrary("loragw");
-    }
-
+public interface LoraWanGateway {
     /**
      * @return LoRaWAN gateway library version
      */
-    public native String version();
+    public String getVersion();
 
     /**
      * @return Region settings names
      */
-    public native String[] regionNames();
+    public String[] getRegionNames();
 
     /**
      * Connect to events
      * @param logger
      */
-    public native void setPayloadListener(LGWListener logger);
+    public void assignPayloadListener(LGWListener logger);
 
     /**
      * Start LoRaWAN gateway
@@ -29,11 +24,11 @@ public class LGW {
      * @param verbosity 0- none, 7- debug
      * @return 0- success
      */
-    public native int start(int regionIndex, String gwId, int verbosity);
+    public int startGateway(int regionIndex, String gwId, int verbosity);
 
     /**
      * Stop LoRaWAN gateway
      */
-    public native void stop();
-}
+    public void stopGateway();
 
+}

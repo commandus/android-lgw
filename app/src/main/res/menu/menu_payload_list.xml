@@ -10,7 +10,6 @@
     <item
         android:id="@+id/action_clear_payload"
         android:orderInCategory="200"
-        android:icon="@android:drawable/ic_delete"
         android:title="@string/label_clear_devices"
         app:showAsAction="ifRoom" />
 </menu>

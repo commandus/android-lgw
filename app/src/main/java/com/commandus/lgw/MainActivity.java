@@ -14,6 +14,7 @@ import android.provider.Settings;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
@@ -23,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.view.MenuProvider;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.commandus.lgw.databinding.ActivityMainBinding;
@@ -54,11 +56,15 @@ public class MainActivity extends AppCompatActivity
         service = ((LGWService.LGWServiceBinder) binder).getService();
         service.attach(this);
         recyclerViewLog.setAdapter(service.gatewayEventAdapter);
-
         runOnUiThread(() -> {
             updateUiRegion();
             // reflect does USB gateway connected already
-            if (!service.isUsbConnected) {
+            if (service.isUsbConnected) {
+                if (!SerialPort.hasDevice(this)) {
+                    service.onDisconnectUsb();
+                    pushMessage(getString(R.string.msg_usb_detached));
+                }
+            } else {
                 service.checkIsUSBConnected();
             }
             reflectUSBConnected(service.isUsbConnected);
@@ -187,7 +193,6 @@ public class MainActivity extends AppCompatActivity
             service.stopGateway();
         }
     }
-
     private boolean startLGW() {
         if (service == null)
             return false;
@@ -197,9 +202,7 @@ public class MainActivity extends AppCompatActivity
             pushMessage(getString(R.string.message_no_usb_connection_established));
             return false;
         }
-        int regionIndex = lgwSettings.getRegionIndex();
-        int verbosity = lgwSettings.getVerbosity();
-        return service.startGateway(regionIndex, verbosity);
+        return service.startGateway(lgwSettings.getRegionIndex(), lgwSettings.getVerbosity());
     }
 
     @Override
@@ -253,6 +256,10 @@ public class MainActivity extends AppCompatActivity
             if (SerialPort.hasDevice(this)) {
                 pushMessage(getString(R.string.msg_usb_attached));
                 connectUSB();
+                // auto-start
+                if (lgwSettings.getAutoStart()) {
+                    reflectGatewayRunning(startLGW());
+                }
             }
         }
         if (ACTION_USB_DETACHED.equals(action)) {
@@ -260,17 +267,16 @@ public class MainActivity extends AppCompatActivity
             disconnectUSB();
         }
     }
-
     private void pushMessage(String msg) {
         if (service == null)
             return;
         service.gatewayEventAdapter.push(msg);
         recyclerViewLog.smoothScrollToPosition(service.gatewayEventAdapter.logData.size() - 1);
     }
-
     @Override
     public void onStarted(String gatewayId, String regionName, int regionIndex) {
-        pushMessage(getString(R.string.msg_running));
+        pushMessage(getString(R.string.msg_running) + " " + regionName);
+        pushMessage(getString(R.string.msg_running_warning));
         reflectGatewayRunning(true);
     }
 
@@ -415,8 +421,13 @@ public class MainActivity extends AppCompatActivity
         if (lgwSettings.getRegionIndex() != selection) {
             lgwSettings.setRegionIndex(selection);
             lgwSettings.save();
+            if (service != null) {
+                if (service.running) {
+                    stopLGW();
+                    reflectGatewayRunning(startLGW());
+                }
+            }
         }
         updateUiRegion();
     }
-
 }

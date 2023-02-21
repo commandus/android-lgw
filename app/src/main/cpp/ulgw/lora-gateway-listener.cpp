@@ -1556,7 +1556,8 @@ int LoraGatewayListener::stop(int waitSeconds)
         success = true;
     }
 
-    success &= lgw_stop() == 0;
+    int r = lgw_stop();
+    success &= r == 0;
 
     // force close
     upstreamThreadRunning = false;
@@ -1569,8 +1570,14 @@ int LoraGatewayListener::stop(int waitSeconds)
     if (onStop) {
         onStop(this, success);
     }
-    if (onLog)
-        onLog->onFinished("");
+    if (onLog) {
+        std::stringstream ss;
+        if (success)
+            ss << ERR_LORA_GATEWAY_SHUTDOWN_SUCCESS;
+        else
+            ss << ERR_LORA_GATEWAY_SHUTDOWN_TIMEOUT << ", lgw_stop error code " << r;
+        onLog->onFinished(ss.str());
+    }
 
     return success ? LORA_OK : ERR_CODE_LORA_GATEWAY_SHUTDOWN_TIMEOUT;
 }

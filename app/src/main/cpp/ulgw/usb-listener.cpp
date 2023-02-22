@@ -115,7 +115,7 @@ bool USBListener::add(
  * @param flags optional flags
  * @return
  */
-int USBListener::listen(void *config, int flags)
+int USBListener::listen(void *config, int flags, ThreadStartFinish *threadStartFinish)
 {
     if (!config)
         return ERR_CODE_NO_CONFIG;
@@ -130,6 +130,7 @@ int USBListener::listen(void *config, int flags)
     listener.setOnLog(onLog);
     listener.setOnSpectralScan(onSpectralScan);
     listener.setOnUpstream(onUpstream);
+    listener.setThreadStartFinish(threadStartFinish);
 
     int r = listener.start();
     if (r)

@@ -61,4 +61,3 @@ public class LorawanGatewayRak2287 implements LoraWanGateway {
         stop();
     }
 }
-

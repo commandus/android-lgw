@@ -124,13 +124,16 @@ private:
     int syncGPSTime();
     int syncGPSLocation();
 
+    // thread control
+    ThreadStartFinish *threadStartFinish;
     // threads
-    void upstreamRunner();      // receive Lora packets from end-device(s)
-    void downstreamBeaconRunner();    // transmit beacons
-    void jitRunner();           // transmit from JIT queue
+    void upstreamRunner();              // receive Lora packets from end-device(s)
+    void downstreamBeaconRunner();      // transmit beacons
+    void jitRunner();                   // transmit from JIT queue
     void spectralScanRunner();
     void gpsRunner();
     void gpsCheckTimeRunner();
+
     bool getTxGainLutIndex(uint8_t rf_chain, int8_t rf_power, uint8_t * lut_index);
 protected:
     // Apply config
@@ -176,6 +179,8 @@ public:
     int stop(int waitSeconds);
     bool isRunning() const;
     bool isStopped() const;
+
+    void setThreadStartFinish(ThreadStartFinish *value);
 
     void setOnSpectralScan(
         std::function<void(

@@ -216,8 +216,6 @@ extern "C" void printf_c1(
         jVM->DetachCurrentThread();
 }
 
-static LibLoragwHelper libLoragwHelper;
-
 class JavaLGWEvent: public LogIntf {
 public:
     void onInfo(
@@ -506,6 +504,24 @@ public:
     }
 };
 
+class JaveThreadStartFinish : public ThreadStartFinish {
+public:
+    void onThreadStart(ENUM_GATEWAY_THREAD thread) {
+        JavaLGWEvent javaCb;
+        std::stringstream ss;
+        ss << "Thread started " << thread;
+        __android_log_print(ANDROID_LOG_DEBUG, "android-lgw", "%s", ss.str().c_str());
+    }
+
+    void onThreadFinish(ENUM_GATEWAY_THREAD thread) {
+        JavaLGWEvent javaCb;
+        std::stringstream ss;
+        ss << "Thread finished " << thread;
+        __android_log_print(ANDROID_LOG_DEBUG, "android-lgw", "%s", ss.str().c_str());
+        jVM->DetachCurrentThread();
+    }
+};
+
 class GatewayConfigMem : public GatewaySettings {
 public:
     MemGatewaySettingsStorage storage;
@@ -621,6 +637,8 @@ public:
     }
 };
 
+static LibLoragwHelper libLoragwHelper;
+
 class AndroidGatewayHandler {
 public:
     // Read database hosted in the Android (content provider)
@@ -676,6 +694,8 @@ public:
         }
     }
 };
+
+static JaveThreadStartFinish javeThreadStartFinish;
 
 static void run(
     uint64_t gatewayIdentifier,
@@ -740,7 +760,7 @@ static void run(
 
     // read only, deny send message and deny send beacon
     int flags = FLAG_GATEWAY_LISTENER_NO_SEND | FLAG_GATEWAY_LISTENER_NO_BEACON;
-    int r = listenerHandler->listener->listen(&gwSettings, flags);
+    int r = listenerHandler->listener->listen(&gwSettings, flags, &javeThreadStartFinish);
     {
         std::stringstream ss;
         ss << "Stopped listening " << r;

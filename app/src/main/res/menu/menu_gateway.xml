@@ -17,4 +17,9 @@
         android:title="@string/label_preferences"
         android:icon="@android:drawable/ic_menu_preferences"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_help"
+        android:orderInCategory="200"
+        android:title="@string/label_help"
+        app:showAsAction="ifRoom" />
 </menu>

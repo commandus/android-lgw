@@ -14,7 +14,6 @@ import android.provider.Settings;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
@@ -24,7 +23,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.view.MenuProvider;
-import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.commandus.lgw.databinding.ActivityMainBinding;
@@ -167,6 +165,10 @@ public class MainActivity extends AppCompatActivity
             case R.id.action_payload:
                 Intent intent2 = new Intent(MainActivity.this, PayloadActivity.class);
                 startActivity(intent2);
+                return true;
+            case R.id.action_help:
+                Intent intent3 = new Intent(MainActivity.this, HelpActivity.class);
+                startActivity(intent3);
                 return true;
         }
         return false;
@@ -357,6 +359,7 @@ public class MainActivity extends AppCompatActivity
     private void disconnectUSB() {
         if (service != null)
             service.stopGateway();
+        service.isUsbConnected = false;
         reflectUSBConnected(false);
     }
     private boolean isUSBConnected() {

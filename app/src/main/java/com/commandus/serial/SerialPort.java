@@ -9,6 +9,7 @@ import android.hardware.usb.UsbManager;
 import android.os.Build;
 
 import com.commandus.lgw.LgwSettings;
+import com.commandus.lgw.R;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
@@ -47,37 +48,34 @@ public class SerialPort {
             }
         }
         if (d == null) {
-            reason = "unknown USB device";
+            reason = context.getString(R.string.msg_unknown_usb_device);
             return null;
         }
         if (!manager.hasPermission(d)) {
-            int flags;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                flags = PendingIntent.FLAG_MUTABLE;
-            else
-                flags = 0;
+            int flags = PendingIntent.FLAG_MUTABLE;
             PendingIntent usbPermissionIntent = PendingIntent.getBroadcast(context, 0,
                     new Intent(LgwSettings.INTENT_ACTION_GRANT_USB), flags);
+
             manager.requestPermission(d, usbPermissionIntent);
-            reason = "UDB device access denied";
+            reason = context.getString(R.string.msg_usb_device_access_denied);
             return null;
         }
 
         UsbDeviceConnection connection = manager.openDevice(d);
 
         if (connection == null) {
-            reason = "open device "
+            reason = context.getString(R.string.msg_usb_device_open_device) + " "
                     + Integer.toHexString(d.getVendorId()) + ":" + Integer.toHexString(d.getProductId()) + " "
                     + d.getProductName() + " "
                     + d.getManufacturerName() + " " + d.getDeviceName();
             return null;
         }
         if (driver == null) {
-            reason = "no driver";
+            reason = context.getString(R.string.msg_usb_device_no_driver);;
             return null;
         }
         if (driver.getPorts().size() == 0) {
-            reason = "no ports";
+            reason = context.getString(R.string.msg_usb_device_no_ports);;
             return null;
         }
 
@@ -91,13 +89,13 @@ public class SerialPort {
             reason = e.getMessage();
             return null;
         } catch (Exception e) {
-            reason = "fatal " + e.getMessage();
+            reason = e.getMessage();
             return null;
         }
         if (success)
             return new SerialSocket(context, connection, port);
         else {
-            reason = "open port";
+            reason = context.getString(R.string.msg_open_port);;
             return null;
         }
     }

@@ -43,11 +43,13 @@ static std::string jstring2string(
     if (!jStr)
         return "";
 
-    const jclass stringClass = env->GetObjectClass(jStr);
-    const jmethodID getBytes = env->GetMethodID(stringClass, "getBytes", "(Ljava/lang/String;)[B");
-    const jbyteArray stringJbytes = (jbyteArray) env->CallObjectMethod(jStr, getBytes, env->NewStringUTF("UTF-8"));
+    jclass stringClass = env->GetObjectClass(jStr);
+    jmethodID getBytes = env->GetMethodID(stringClass, "getBytes", "(Ljava/lang/String;)[B");
+    // jbyteArray
+    auto stringJbytes = (jbyteArray) env->CallObjectMethod(jStr, getBytes, env->NewStringUTF("UTF-8"));
 
-    size_t length = (size_t) env->GetArrayLength(stringJbytes);
+    // size_t
+    auto length = (size_t) env->GetArrayLength(stringJbytes);
     jbyte* pBytes = env->GetByteArrayElements(stringJbytes, nullptr);
 
     std::string ret = std::string((char *)pBytes, length);
@@ -57,8 +59,6 @@ static std::string jstring2string(
     env->DeleteLocalRef(stringClass);
     return ret;
 }
-
-static LoraGatewayListener loraGatewayListener;
 
 static JavaVM *jVM;
 static jclass loggerCls = nullptr;
@@ -270,7 +270,7 @@ public:
         ssGatewayId << std::hex << gatewayId;
         jstring jGatewayId = jEnv->NewStringUTF(ssGatewayId.str().c_str());
         jstring jRegionName = jEnv->NewStringUTF(regionName.c_str());
-        jint jRegionIndex = regionIndex;
+        jint jRegionIndex = (jint) regionIndex;
         if (jGatewayId && jRegionName)
             jEnv->CallVoidMethod(loggerObject, android_LGW_onStart,
                                  jGatewayId, jRegionName, jRegionIndex);
@@ -351,7 +351,7 @@ public:
      * @param devaddr device address
      * @return 0- success, ERR_CODE_DEVICE_ADDRESS_NOTFOUND- device is not registered
      */
-    int identityGet(DeviceId &retVal, DEVADDR &devaddr)
+    int identityGet(DeviceId &retVal, DEVADDR &devaddr) override
     {
         if (!loggerObject || !android_LGW_onIdentityGet)
             return 0;
@@ -378,8 +378,9 @@ public:
         jfieldID jfDevEui = jEnv->GetFieldID(jLoraAddressCls,"devEui", "Lcom/commandus/lgw/DevEUI;");
         jobject joDevEui = jEnv->GetObjectField(r, jfDevEui);
         jclass jDevEUICls = jEnv->GetObjectClass(joDevEui);
-        const jmethodID jmDevEuiToString = jEnv->GetMethodID(jDevEUICls, "toString", "()Ljava/lang/String;");
-        jstring jsDevEui = static_cast<jstring>(jEnv->CallObjectMethod(joDevEui, jmDevEuiToString));
+        jmethodID jmDevEuiToString = jEnv->GetMethodID(jDevEUICls, "toString", "()Ljava/lang/String;");
+        // jstring
+        auto jsDevEui = (jstring) jEnv->CallObjectMethod(joDevEui, jmDevEuiToString);
         std::string s = jstring2string(jEnv, jsDevEui);
 
         retVal.setEUIString(s);
@@ -390,8 +391,9 @@ public:
         jfieldID jfNwkSKey = jEnv->GetFieldID(jLoraAddressCls,"nwkSKey", "Lcom/commandus/lgw/KEY128;");
         jobject joNwkSKey = jEnv->GetObjectField(r, jfNwkSKey);
         jclass jNwkSKeyCls = jEnv->GetObjectClass(joNwkSKey);
-        const jmethodID jmNwkSKeyToString = jEnv->GetMethodID(jNwkSKeyCls, "toString", "()Ljava/lang/String;");
-        jstring jsNwkSKey = static_cast<jstring>(jEnv->CallObjectMethod(joNwkSKey, jmNwkSKeyToString));
+        jmethodID jmNwkSKeyToString = jEnv->GetMethodID(jNwkSKeyCls, "toString", "()Ljava/lang/String;");
+        // jstring
+        auto jsNwkSKey = (jstring)jEnv->CallObjectMethod(joNwkSKey, jmNwkSKeyToString);
         retVal.setNwkSKeyString(jstring2string(jEnv, jsNwkSKey));
         jEnv->DeleteLocalRef(joNwkSKey);
         jEnv->DeleteLocalRef(jsNwkSKey);
@@ -399,14 +401,16 @@ public:
         jfieldID jfAppSKey = jEnv->GetFieldID(jLoraAddressCls,"appSKey", "Lcom/commandus/lgw/KEY128;");
         jobject joAppSKey = jEnv->GetObjectField(r, jfAppSKey);
         jclass jAppSKeyCls = jEnv->GetObjectClass(joAppSKey);
-        const jmethodID jmAppSKeyToString = jEnv->GetMethodID(jAppSKeyCls, "toString", "()Ljava/lang/String;");
-        jstring jsAppSKey = static_cast<jstring>(jEnv->CallObjectMethod(joAppSKey, jmAppSKeyToString));
+        jmethodID jmAppSKeyToString = jEnv->GetMethodID(jAppSKeyCls, "toString", "()Ljava/lang/String;");
+        // jstring
+        auto jsAppSKey = (jstring) jEnv->CallObjectMethod(joAppSKey, jmAppSKeyToString);
         retVal.setAppSKeyString(jstring2string(jEnv, jsAppSKey));
         jEnv->DeleteLocalRef(joAppSKey);
         jEnv->DeleteLocalRef(jsAppSKey);
         // String name
         jfieldID jfName = jEnv->GetFieldID(jLoraAddressCls,"name", "Ljava/lang/String;");
-        jstring jsName = (jstring) jEnv->GetObjectField(r, jfName);
+        // jstring
+        auto jsName = (jstring) jEnv->GetObjectField(r, jfName);
         retVal.setName(jstring2string(jEnv, jsName));
         jEnv->DeleteLocalRef(jsName);
 
@@ -421,7 +425,7 @@ public:
      * @param eui device EUI
      * @return 0- success, ERR_CODE_DEVICE_EUI_NOT_FOUND- error
      */
-    int identityGetNetworkIdentity(NetworkIdentity &retVal, const DEVEUI &eui)
+    int identityGetNetworkIdentity(NetworkIdentity &retVal, const DEVEUI &eui) override
     {
         if (!loggerObject || !android_LGW_onIdentityGetNetworkIdentity)
             return 0;
@@ -441,17 +445,19 @@ public:
 
         // String addr
         jfieldID jfAddr = jEnv->GetFieldID(jLoraAddressCls,"addr", "Ljava/lang/String;");
-        jstring jsAddr = (jstring) jEnv->GetObjectField(r, jfAddr);
-        string2DEVADDR(retVal.devaddr, jstring2string(jEnv, jsAddr).c_str());
+        // jstring
+        auto jsAddr = (jstring) jEnv->GetObjectField(r, jfAddr);
+        string2DEVADDR(retVal.devaddr, jstring2string(jEnv, jsAddr));
         jEnv->DeleteLocalRef(jsAddr);
 
         // DevEUI devEui;
         jfieldID jfDevEui = jEnv->GetFieldID(jLoraAddressCls,"devEui", "Lcom/commandus/lgw/DevEUI;");
         jobject joDevEui = jEnv->GetObjectField(r, jfDevEui);
         jclass jDevEUICls = jEnv->GetObjectClass(joDevEui);
-        const jmethodID jmDevEuiToString = jEnv->GetMethodID(jDevEUICls, "toString", "()Ljava/lang/String;");
-        jstring jsDevEui = static_cast<jstring>(jEnv->CallObjectMethod(joDevEui, jmDevEuiToString));
-        string2DEVEUI(retVal.devEUI, jstring2string(jEnv, jsDevEui).c_str());
+        jmethodID jmDevEuiToString = jEnv->GetMethodID(jDevEUICls, "toString", "()Ljava/lang/String;");
+        // jstring
+        auto jsDevEui = (jstring) jEnv->CallObjectMethod(joDevEui, jmDevEuiToString);
+        string2DEVEUI(retVal.devEUI, jstring2string(jEnv, jsDevEui));
         jEnv->DeleteLocalRef(joDevEui);
         jEnv->DeleteLocalRef(jsDevEui);
 
@@ -459,9 +465,10 @@ public:
         jfieldID jfNwkSKey = jEnv->GetFieldID(jLoraAddressCls,"nwkSKey", "Lcom/commandus/lgw/KEY128;");
         jobject joNwkSKey = jEnv->GetObjectField(r, jfNwkSKey);
         jclass jNwkSKeyCls = jEnv->GetObjectClass(joNwkSKey);
-        const jmethodID jmNwkSKeyToString = jEnv->GetMethodID(jNwkSKeyCls, "toString", "()Ljava/lang/String;");
-        jstring jsNwkSKey = static_cast<jstring>(jEnv->CallObjectMethod(joNwkSKey, jmNwkSKeyToString));
-        string2KEY(retVal.nwkSKey, jstring2string(jEnv, jsNwkSKey).c_str());
+        jmethodID jmNwkSKeyToString = jEnv->GetMethodID(jNwkSKeyCls, "toString", "()Ljava/lang/String;");
+        // jstring
+        auto jsNwkSKey = (jstring) jEnv->CallObjectMethod(joNwkSKey, jmNwkSKeyToString);
+        string2KEY(retVal.nwkSKey, jstring2string(jEnv, jsNwkSKey));
         jEnv->DeleteLocalRef(joNwkSKey);
         jEnv->DeleteLocalRef(jsNwkSKey);
 
@@ -469,16 +476,18 @@ public:
         jfieldID jfAppSKey = jEnv->GetFieldID(jLoraAddressCls,"appSKey", "Lcom/commandus/lgw/KEY128;");
         jobject joAppSKey = jEnv->GetObjectField(r, jfAppSKey);
         jclass jAppSKeyCls = jEnv->GetObjectClass(joAppSKey);
-        const jmethodID jmAppSKeyToString = jEnv->GetMethodID(jAppSKeyCls, "toString", "()Ljava/lang/String;");
-        jstring jsAppSKey = static_cast<jstring>(jEnv->CallObjectMethod(joAppSKey, jmAppSKeyToString));
-        string2KEY(retVal.appSKey, jstring2string(jEnv, jsAppSKey).c_str());
+        jmethodID jmAppSKeyToString = jEnv->GetMethodID(jAppSKeyCls, "toString", "()Ljava/lang/String;");
+        // jstring
+        auto jsAppSKey = (jstring) jEnv->CallObjectMethod(joAppSKey, jmAppSKeyToString);
+        string2KEY(retVal.appSKey, jstring2string(jEnv, jsAppSKey));
 
         jEnv->DeleteLocalRef(joAppSKey);
         jEnv->DeleteLocalRef(jsAppSKey);
 
         // String name
         jfieldID jfName = jEnv->GetFieldID(jLoraAddressCls,"name", "Ljava/lang/String;");
-        jstring jsName = (jstring) jEnv->GetObjectField(r, jfName);
+        // jstring
+        auto jsName = (jstring) jEnv->GetObjectField(r, jfName);
         string2DEVICENAME(retVal.name, jstring2string(jEnv, jsName).c_str());
         jEnv->DeleteLocalRef(jsName);
 
@@ -488,7 +497,7 @@ public:
     }
 
     // Entries count
-    size_t identitySize()
+    size_t identitySize() override
     {
         if (!loggerObject || !android_LGW_onIdentitySize)
             return 0;
@@ -506,14 +515,16 @@ public:
 
 class JaveThreadStartFinish : public ThreadStartFinish {
 public:
-    void onThreadStart(ENUM_GATEWAY_THREAD thread) {
+    void onThreadStart(ENUM_GATEWAY_THREAD thread) override
+    {
         JavaLGWEvent javaCb;
         std::stringstream ss;
         ss << "Thread started " << thread;
         __android_log_print(ANDROID_LOG_DEBUG, "android-lgw", "%s", ss.str().c_str());
     }
 
-    void onThreadFinish(ENUM_GATEWAY_THREAD thread) {
+    void onThreadFinish(ENUM_GATEWAY_THREAD thread) override
+    {
         JavaLGWEvent javaCb;
         std::stringstream ss;
         ss << "Thread finished " << thread;
@@ -554,7 +565,7 @@ class AndroidLoraPacketHandler : public LoraPacketHandler {
 private:
     JavaLGWEvent *javaLGWEvent;
 public:
-    AndroidLoraPacketHandler(JavaLGWEvent *javaLGWEvent) {
+    explicit AndroidLoraPacketHandler(JavaLGWEvent *javaLGWEvent) {
         this->javaLGWEvent = javaLGWEvent;
     }
 
@@ -581,7 +592,7 @@ public:
         p.devName = DEVICENAME2string(packet.devId.name);
         if (!packet.metadata.empty()) {
             rfmMetaData &m = packet.metadata[0];
-            p.frequency = m.freq;
+            p.frequency = (int) m.freq;
             p.rssi = m.rssi;
             p.lsnr = m.lsnr;
         } else {
@@ -607,7 +618,7 @@ public:
         p.devName = "";
         if (!packet.metadata.empty()) {
             rfmMetaData &m = packet.metadata[0];
-            p.frequency = m.freq;
+            p.frequency = (int) m.freq;
             p.rssi = m.rssi;
             p.lsnr = m.lsnr;
         } else {
@@ -646,11 +657,11 @@ public:
     // open/close Android USB serial port helper
     LibLoragwOpenClose *libLoragwOpenClose;
     // RAK2287 USB serial port listener
-    PacketListener *listener;
+    USBListener *listener;
     // Send packet to the Android
     AndroidLoraPacketHandler *packetHandler;
 
-    AndroidGatewayHandler(JavaLGWEvent *javaLGWEvent) {
+    explicit AndroidGatewayHandler(JavaLGWEvent *javaLGWEvent) {
         identityService = new AndroidIdentityService();
         libLoragwOpenClose = new AndroidLoragwOpenClose();
         libLoragwHelper.onOpenClose = libLoragwHelper.onOpenClose;
@@ -660,7 +671,7 @@ public:
         listener->setHandler(packetHandler);
         listener->setIdentityService(identityService);
 
-        ((USBListener*) listener)->listener.setOnStop(
+        listener->listener.setOnStop(
             [&javaLGWEvent] (const LoraGatewayListener *lsnr,
                 bool gracefullyStopped
             ) {
@@ -696,6 +707,7 @@ public:
 };
 
 static JaveThreadStartFinish javeThreadStartFinish;
+static AndroidGatewayHandler* listenerHandler = nullptr;
 
 static void run(
     uint64_t gatewayIdentifier,
@@ -704,8 +716,8 @@ static void run(
 )
 {
     JavaLGWEvent javaCb;
-    AndroidGatewayHandler *listenerHandler = new AndroidGatewayHandler(&javaCb);
-    // loraGatewayListener.setOnLog(&javaCb);
+    listenerHandler = new AndroidGatewayHandler(&javaCb);
+    listenerHandler->listener->listener.stopRequest = false;
 
     libLoragwHelper.bind(&javaCb, listenerHandler->libLoragwOpenClose);
     listenerHandler->identityService->init("", &javaCb);
@@ -761,19 +773,14 @@ static void run(
     // read only, deny send message and deny send beacon
     int flags = FLAG_GATEWAY_LISTENER_NO_SEND | FLAG_GATEWAY_LISTENER_NO_BEACON;
     int r = listenerHandler->listener->listen(&gwSettings, flags, &javeThreadStartFinish);
-    {
-        std::stringstream ss;
-        ss << "Stopped listening " << r;
-        javaCb.onInfo(nullptr, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
-    }
-
     if (r) {
-        std::stringstream ss;
-        ss << ERR_MESSAGE << r << ": " << strerror_lorawan_ns(r) << std::endl;
-        javaCb.onInfo(nullptr, LOG_ERR, LOG_MAIN_FUNC, r, ss.str());
+        std::stringstream ss2;
+        ss2 << ERR_MESSAGE << r << ": " << strerror_lorawan_ns(r) << std::endl;
+        javaCb.onInfo(nullptr, LOG_ERR, LOG_MAIN_FUNC, r, ss2.str());
     } else
         javaCb.onFinished("Successfully finished");
     delete listenerHandler;
+    listenerHandler = nullptr;
     jVM->DetachCurrentThread();
 }
 
@@ -787,9 +794,8 @@ extern "C" JNIEXPORT jint JNICALL Java_com_commandus_lgw_LorawanGatewayRak2287_s
     jint verbosity
 )
 {
-    loraGatewayListener.stopRequest = false;
     std::string id = jstring2string(env, gwIdString);
-    uint64_t gwId = std::stoull(id.c_str(), 0, 16);
+    uint64_t gwId = std::stoull(id, nullptr, 16);
     gwThread = new std::thread(run, gwId, regionIdx, verbosity);
     gwThread->detach();
     return 0;
@@ -800,13 +806,14 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LorawanGatewayRak2287_s
     jobject /* this */
 )
 {
-    JavaLGWEvent javaCb;
-
-    int r = loraGatewayListener.stop(0);
+    if (!listenerHandler)
+        return;
+    int r = listenerHandler->listener->listener.stop(0);
     if (r) {
-        std::stringstream ss;
-        ss << "Stop error " << r;
-        javaCb.onInfo(nullptr, LOG_ERR, LOG_MAIN_FUNC, r, ss.str());
+        JavaLGWEvent javaCb;
+        std::stringstream ss3;
+        ss3 << "Stop error " << r;
+        javaCb.onInfo(nullptr, LOG_ERR, LOG_MAIN_FUNC, r, ss3.str());
     }
 }
 
@@ -858,15 +865,16 @@ extern "C" ssize_t read_c(
     if (!jEnv || !loggerObject)
         return -1;
 
-    jint jCount = count;
-    jbyteArray a = static_cast<jbyteArray>(jEnv->CallObjectMethod(loggerObject, android_LGW_onRead, jCount));
+    jint jCount = (jint) count;
+    // jbyteArray
+    auto a = (jbyteArray) jEnv->CallObjectMethod(loggerObject, android_LGW_onRead, jCount);
     if (!a) {
         if (requireDetach)
             jVM->DetachCurrentThread();
         return -1;
     }
 
-    jbyte *ae = jEnv->GetByteArrayElements(a, 0);
+    jbyte *ae = jEnv->GetByteArrayElements(a, nullptr);
     jsize len = jEnv->GetArrayLength(a);
 
     for (int i = 0; i < len; ++i ) {
@@ -890,13 +898,13 @@ extern "C" ssize_t write_c(
     JNIEnv *jEnv = getJavaEnv(requireDetach);
     if (!jEnv || !loggerObject)
         return -1;
-    jbyteArray jb = jEnv->NewByteArray(count);
+    jbyteArray jb = jEnv->NewByteArray((jsize) count);
     if (!jb) {
         if (requireDetach)
             jVM->DetachCurrentThread();
         return -1;
     }
-    jEnv->SetByteArrayRegion(jb, 0, count, (jbyte*) buf);
+    jEnv->SetByteArrayRegion(jb, 0, (jsize)count, (jbyte*) buf);
 
     int r = jEnv->CallIntMethod(loggerObject, android_LGW_onWrite, jb);
 
@@ -917,8 +925,8 @@ extern "C" int tcgetattr_c(
         retval->c_cflag = 0;    // control modes
         retval->c_lflag = 0;    // local modes
         retval->c_line = 0;
-        for (int i = 0; i < NCCS; i++) {
-            retval->c_cc[i] = 0;    // special characters
+        for (unsigned char & i : retval->c_cc) {
+            i = 0;    // special characters
         }
     }
     return 0;
@@ -957,22 +965,24 @@ static void runFake(
     int verbosity
 ) {
     JavaLGWEvent javaCb;
-    AndroidGatewayHandler *listenerHandler = new AndroidGatewayHandler(&javaCb);
+    auto *fakeListenerHandler = new AndroidGatewayHandler(&javaCb);
 
-    libLoragwHelper.bind(&javaCb, listenerHandler->libLoragwOpenClose);
-    listenerHandler->identityService->init("", &javaCb);
+    fakeListenerHandler->listener->listener.stopRequest = false;
+
+    libLoragwHelper.bind(&javaCb, fakeListenerHandler->libLoragwOpenClose);
+    fakeListenerHandler->identityService->init("", &javaCb);
 
     javaCb.onStarted(gatewayIdentifier,
                      memSetupMemGatewaySettingsStorage[regionIdx].name, regionIdx);
 
     if (!libLoragwHelper.onOpenClose) {
         javaCb.onFinished("No open/close");
-        delete listenerHandler;
+        delete fakeListenerHandler;
         jVM->DetachCurrentThread();
         return;
     }
 
-    if (!listenerHandler->identityService) {
+    if (!fakeListenerHandler->identityService) {
         std::stringstream ss;
         ss << ERR_MESSAGE << ERR_CODE_FAIL_IDENTITY_SERVICE << ": " << ERR_FAIL_IDENTITY_SERVICE
            << memSetupMemGatewaySettingsStorage[regionIdx].name
@@ -984,21 +994,21 @@ static void runFake(
 
     {
         std::stringstream ss;
-        ss << "Devices: " << listenerHandler->identityService->size();
-        javaCb.onInfo(listenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
+        ss << "Devices: " << fakeListenerHandler->identityService->size();
+        javaCb.onInfo(fakeListenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
     }
 
     GatewayConfigMem gwSettings;
     // set regional settings
     memSetupMemGatewaySettingsStorage[regionIdx].setup(gwSettings.storage);
 
-    if (listenerHandler->listener)
-        listenerHandler->listener->setLogger(verbosity, &javaCb);
-    if (!listenerHandler->listener || !listenerHandler->listener->onLog) {
+    if (fakeListenerHandler->listener)
+        fakeListenerHandler->listener->setLogger(verbosity, &javaCb);
+    if (!fakeListenerHandler->listener || !fakeListenerHandler->listener->onLog) {
         std::stringstream ss;
         ss << ERR_MESSAGE << ERR_CODE_INSUFFICIENT_MEMORY << ": " << ERR_INSUFFICIENT_MEMORY << std::endl;
         javaCb.onFinished(ss.str());
-        delete listenerHandler;
+        delete fakeListenerHandler;
         jVM->DetachCurrentThread();
         return;
     }
@@ -1007,12 +1017,12 @@ static void runFake(
     ss << "Listening, region "
        << memSetupMemGatewaySettingsStorage[regionIdx].name << std::endl;
 
-    javaCb.onInfo(listenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
+    javaCb.onInfo(fakeListenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
 
     int r = 0;
 
     size_t cnt = 0;
-    while (!loraGatewayListener.stopRequest) {
+    while (!fakeListenerHandler->listener->listener.stopRequest) {
         if ((cnt % 60) == 0) {
             Payload p;
             p.received = time(nullptr);
@@ -1029,12 +1039,12 @@ static void runFake(
         cnt++;
     }
     if (r) {
-        std::stringstream ss;
-        ss << ERR_MESSAGE << r << ": " << strerror_lorawan_ns(r) << std::endl;
-        javaCb.onInfo(listenerHandler->listener, LOG_ERR, LOG_MAIN_FUNC, r, ss.str());
+        std::stringstream ss4;
+        ss4 << ERR_MESSAGE << r << ": " << strerror_lorawan_ns(r) << std::endl;
+        javaCb.onInfo(fakeListenerHandler->listener, LOG_ERR, LOG_MAIN_FUNC, r, ss4.str());
     } else
         javaCb.onFinished("Successfully finished");
-    delete listenerHandler;
+    delete fakeListenerHandler;
     jVM->DetachCurrentThread();
 }
 
@@ -1046,9 +1056,8 @@ extern "C" JNIEXPORT jint JNICALL Java_com_commandus_lgw_LorawanGatewayFake_star
     jint verbosity
 )
 {
-    loraGatewayListener.stopRequest = false;
     std::string id = jstring2string(env, gwIdString);
-    uint64_t gwId = std::stoull(id.c_str(), 0, 16);
+    uint64_t gwId = std::stoull(id, nullptr, 16);
     gwThread = new std::thread(runFake, gwId, regionIdx, verbosity);
     gwThread->detach();
     return 0;
@@ -1059,5 +1068,6 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LorawanGatewayFake_stop
     jobject /* this */
 )
 {
-    loraGatewayListener.stopRequest = true;
+    if (listenerHandler)
+        listenerHandler->listener->listener.stopRequest = true;
 }

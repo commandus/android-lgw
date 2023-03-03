@@ -216,8 +216,11 @@ public class DeviceAddressProvider extends ContentProvider {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         Cursor cursor = db.rawQuery(SELECT_ALL_PREFIX + " WHERE " + FN_ID + " = ? ",
                 new String[]{Long.toString(id)});
-        if (!cursor.moveToFirst())
+        if (!cursor.moveToFirst()) {
+            cursor.close();
+            db.close();
             return null;
+        }
         LoraDeviceAddress r = new LoraDeviceAddress(
             cursor.getInt(F_ID),
             cursor.getString(F_ADDR),
@@ -236,8 +239,11 @@ public class DeviceAddressProvider extends ContentProvider {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         Cursor cursor = db.rawQuery(SELECT_ALL_PREFIX + " WHERE " + FN_ADDR + " = ? ",
                 new String[]{ deviceAddress.toLowerCase() });
-        if (!cursor.moveToFirst())
+        if (!cursor.moveToFirst()) {
+            cursor.close();
+            db.close();
             return null;
+        }
         LoraDeviceAddress r = new LoraDeviceAddress(
             cursor.getInt(F_ID),
             cursor.getString(F_ADDR),

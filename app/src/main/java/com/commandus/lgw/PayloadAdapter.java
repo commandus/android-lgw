@@ -38,7 +38,7 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
                 adapter.mSelection.onSelect(id);
         }
 
-        public void set(int position, long id, String payloadHex, String defaultValue) {
+        public void set(long id, String payloadHex, String defaultValue) {
             this.id = id;
             if (payloadHex == null || payloadHex.isEmpty())
                 payloadHex = defaultValue;
@@ -59,9 +59,6 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
         View view = LayoutInflater.from(viewGroup.getContext())
                 .inflate(R.layout.payload_list_item, viewGroup, false);
-        if (mSelection != null) {
-            final RecyclerView.ViewHolder holder = new PayloadAdapter.ViewHolder(view);
-        }
         return new ViewHolder(view);
     }
 
@@ -71,7 +68,7 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.ViewHold
         // Get element from your dataset at this position and replace the
         // contents of the view with that element
         mCursor.moveToPosition(position);
-        viewHolder.set(position, mCursor.getLong(PayloadProvider.F_ID),
+        viewHolder.set(mCursor.getLong(PayloadProvider.F_ID),
                 mCursor.getString(PayloadProvider.F_PAYLOAD),
                 recyclerView.getContext().getString(R.string.msg_no_payload));
     }

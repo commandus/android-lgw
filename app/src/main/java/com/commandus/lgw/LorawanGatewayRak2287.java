@@ -18,7 +18,7 @@ public class LorawanGatewayRak2287 implements LoraWanGateway {
 
     /**
      * Connect to events
-     * @param logger
+     * @param logger gateway listener
      */
     private native void setPayloadListener(LGWListener logger);
 

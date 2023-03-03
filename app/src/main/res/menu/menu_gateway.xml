@@ -22,4 +22,10 @@
         android:orderInCategory="200"
         android:title="@string/label_help"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_send_log_snapshot"
+        android:orderInCategory="200"
+        android:title="@string/label_send_log_snapshot"
+        app:showAsAction="ifRoom" />
+
 </menu>

@@ -30,17 +30,6 @@ public class LGWService extends Service implements
     // where to send payload
     private Uri mContentProviderUri;
 
-    /**
-     * Return opened USB COM port
-     *
-     * @return >0 file descriptor, 0- no USB device found, <0- system error while open port
-     */
-    public int getUSBPortFileDescriptor() {
-        if (!isUsbConnected || usbSerialSocket == null)
-            return 0;
-        return usbSerialSocket.serialPort.getPortNumber();
-    }
-
     @Override
     public void onDisconnectUsb() {
         // device disconnected
@@ -151,14 +140,16 @@ public class LGWService extends Service implements
         int severity,
         String message
     ) {
-        if (message.startsWith("Error")) {
+        boolean fatal = message.startsWith("Error");
+        if (fatal)
             severity = 1;
-            stopGateway();
-        }
         showError(severity, message);
+        if (fatal)
+            stopGateway();
     }
 
     private void showError(int severity, String message) {
+        Log.e(LogHelper.TAG, message);
         synchronized (this) {
             if (listener != null) {
                 mainLooper.post(() -> {
@@ -208,7 +199,6 @@ public class LGWService extends Service implements
     @Override
     public void onFinished(String message) {
         running = false;
-        lgw.assignPayloadListener(null);
         synchronized (this) {
             mainLooper.post(() -> {
                 if (listener != null) {
@@ -287,7 +277,6 @@ public class LGWService extends Service implements
     }
 
     private Uri sendPayload2ContentProvider(Payload payload) {
-        Log.i("LGW", payload.toString());
         if (mContentProviderUri == null)
             return null;
         try {

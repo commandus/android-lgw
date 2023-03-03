@@ -89,6 +89,9 @@
     <string name="label_payload_item_frequency">Frequency</string>
     <string name="label_payload_item_rssi">RSSI</string>
     <string name="label_payload_item_lsnr">LSNR</string>
+    <string name="label_mhz">MHz</string>
+    <string name="label_dbm">dBm</string>
+    <string name="label_db">dB</string>
     <string name="msg_abp_addresses">ABP addresses </string>
     <string name="msg_share_payload">Payload </string>
     <string name="msg_usb_attached">USB device attached</string>
@@ -100,4 +103,7 @@
     <string name="msg_open_port">Open port</string>
     <string name="msg_usb_device_open_device">Open USB device</string>
     <string name="label_help">Help</string>
+    <string name="label_send_log_snapshot">Share log</string>
+    <string name="msg_share_log">Share log</string>
+
 </resources>

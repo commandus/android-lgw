@@ -16,7 +16,7 @@ public interface LGWListener {
 
     /**
      * return device identifier by the address
-     * @param devAddr
+     * @param devAddr end-device address
      * @return null if not found
      */
     LoraDeviceAddress onIdentityGet(String devAddr);

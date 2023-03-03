@@ -1,16 +1,12 @@
 package com.commandus.lgw;
 
 import android.util.JsonReader;
-import android.util.Log;
 
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.List;
 
 public class AddressLoader {
-    private AddressListResult mResult;
 
     public AddressLoader(String url, AddressListResult retVal) {
         Thread t = new Thread(() -> {
@@ -24,18 +20,25 @@ public class AddressLoader {
                         reader.beginObject();
                         while (reader.hasNext()) {
                             String name = reader.nextName();
-                            if (name.equals(DeviceAddressProvider.FN_ADDR)) {
-                                d.addr = reader.nextString();
-                            } else if (name.equals(DeviceAddressProvider.FN_DEVEUI)) {
-                                d.devEui = new DevEUI(reader.nextString());
-                            } else if (name.equals(DeviceAddressProvider.FN_NWKSKEY)) {
-                                d.nwkSKey = new KEY128(reader.nextString());
-                            } else if (name.equals(DeviceAddressProvider.FN_APPSKEY)) {
-                                d.appSKey = new KEY128(reader.nextString());
-                            } else if (name.equals(DeviceAddressProvider.FN_NAME)) {
-                                d.name = reader.nextString();
-                            } else {
-                                reader.skipValue();
+                            switch (name) {
+                                case DeviceAddressProvider.FN_ADDR:
+                                    d.addr = reader.nextString();
+                                    break;
+                                case DeviceAddressProvider.FN_DEVEUI:
+                                    d.devEui = new DevEUI(reader.nextString());
+                                    break;
+                                case DeviceAddressProvider.FN_NWKSKEY:
+                                    d.nwkSKey = new KEY128(reader.nextString());
+                                    break;
+                                case DeviceAddressProvider.FN_APPSKEY:
+                                    d.appSKey = new KEY128(reader.nextString());
+                                    break;
+                                case DeviceAddressProvider.FN_NAME:
+                                    d.name = reader.nextString();
+                                    break;
+                                default:
+                                    reader.skipValue();
+                                    break;
                             }
                         }
                         reader.endObject();

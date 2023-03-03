@@ -1,8 +1,8 @@
 package com.commandus.lgw;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -16,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.core.view.MenuHost;
 import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
@@ -88,7 +89,8 @@ public class AddressListFragment extends Fragment
 
     @Override
     public View onCreateView(
-            LayoutInflater inflater, ViewGroup container,
+            @NonNull LayoutInflater inflater,
+            ViewGroup container,
             Bundle savedInstanceState
     ) {
         binding = FragmentAddressListBinding.inflate(inflater, container, false);
@@ -127,7 +129,7 @@ public class AddressListFragment extends Fragment
         Intent sendIntent = new Intent();
         sendIntent.setAction(Intent.ACTION_SEND);
         sendIntent.putExtra(Intent.EXTRA_TEXT, DeviceAddressProvider.toJson(getContext()));
-        sendIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.msg_abp_addresses) + new Date().toString());
+        sendIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.msg_abp_addresses) + new Date());
         sendIntent.setType("text/plain");
         Intent shareIntent = Intent.createChooser(sendIntent, null);
         startActivity(shareIntent);
@@ -140,7 +142,7 @@ public class AddressListFragment extends Fragment
                 // load
                 lgwSettings.setLoadLastUri(value);
                 lgwSettings.save();
-                AddressLoader loader = new AddressLoader(value, this);
+                new AddressLoader(value, this);
                 break;
             case ACTION_SAVE:
                 // save
@@ -153,24 +155,31 @@ public class AddressListFragment extends Fragment
     @Override
     public void onDone(int status) {
         // load or save completed
-        getActivity().runOnUiThread(()-> {
-            refreshAdapter();
-        });
+        FragmentActivity a = getActivity();
+        if (a != null) {
+            a.runOnUiThread(this::refreshAdapter);
+        }
     }
 
     @Override
     public void onAddress(LoraDeviceAddress value) {
         ContentValues cv = value.getContentValues();
-        Uri uri = getContext().getContentResolver().insert(DeviceAddressProvider.CONTENT_URI_ABP, cv);
+        Context a = getContext();
+        if (a != null) {
+            a.getContentResolver().insert(DeviceAddressProvider.CONTENT_URI_ABP, cv);
+        }
     }
 
     @Override
     public void onError(String message) {
-        getActivity().runOnUiThread(()->{
-            refreshAdapter();
-            Toast toast = Toast.makeText(getContext(), message, Toast.LENGTH_LONG);
-            toast.show();
-        });
+        FragmentActivity a = getActivity();
+        if (a != null) {
+            a.runOnUiThread(() -> {
+                refreshAdapter();
+                Toast toast = Toast.makeText(getContext(), message, Toast.LENGTH_LONG);
+                toast.show();
+            });
+        }
     }
 
 }

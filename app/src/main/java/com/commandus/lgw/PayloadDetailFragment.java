@@ -1,5 +1,7 @@
 package com.commandus.lgw;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,46 +25,49 @@ public class PayloadDetailFragment extends Fragment {
     private TextView textViewPayloadItemRssi;
     private TextView textViewPayloadItemLsnr;
     private PayloadItemViewModel payloadItemViewModel;
-    private Payload selected;
 
     @Override
     public View onCreateView(
-            LayoutInflater inflater, ViewGroup container,
+            @NonNull LayoutInflater inflater,
+            ViewGroup container,
             Bundle savedInstanceState
     ) {
 
         binding = FragmentPayloadDetailBinding.inflate(inflater, container, false);
         textViewPayloadItemReceived = binding.textViewPayloadItemReceived;
-        textViewPayloadItemReceived.setOnClickListener(view ->
-                LgwHelper.copy2clipboard(getContext(), getString(R.string.label_payload_item_payload),
-                        payloadItemViewModel.selectedPayload.getValue().toString(), getString(R.string.msg_payload_copied)));
         textViewPayloadItemEui = binding.textViewPayloadItemEui;
-        textViewPayloadItemEui.setOnClickListener(view ->
-                LgwHelper.copy2clipboard(getContext(), getString(R.string.label_device_eui),
-                        textViewPayloadItemEui.getText().toString(), getString(R.string.msg_eui_copied)));
-
         textViewPayloadItemName = binding.textViewPayloadItemName;
         textViewPayloadItemPayload = binding.textViewPayloadItemPayload;
-        textViewPayloadItemPayload.setOnClickListener(view ->
-                LgwHelper.copy2clipboard(getContext(), getString(R.string.label_payload_item_payload),
-                textViewPayloadItemPayload.getText().toString(), getString(R.string.msg_payload_copied)));
         textViewPayloadItemFrequency = binding.textViewPayloadItemFrequency;
         textViewPayloadItemRssi = binding.textViewPayloadItemRssi;
         textViewPayloadItemLsnr = binding.textViewPayloadItemLsnr;
 
+        Context context = getContext();
+        if (context != null) {
+            textViewPayloadItemReceived.setOnClickListener(view ->
+                    LgwHelper.copy2clipboard(context, getString(R.string.label_payload_item_payload),
+                            textViewPayloadItemPayload.getText().toString(), getString(R.string.msg_payload_copied)));
+            textViewPayloadItemEui.setOnClickListener(view ->
+                    LgwHelper.copy2clipboard(context, getString(R.string.label_device_eui),
+                            textViewPayloadItemEui.getText().toString(), getString(R.string.msg_eui_copied)));
+            textViewPayloadItemPayload.setOnClickListener(view ->
+                    LgwHelper.copy2clipboard(context, getString(R.string.label_payload_item_payload),
+                    textViewPayloadItemPayload.getText().toString(), getString(R.string.msg_payload_copied)));
+        }
         payloadItemViewModel = new ViewModelProvider(requireActivity()).get(PayloadItemViewModel.class);
-
         return binding.getRoot();
     }
 
+    @SuppressLint("DefaultLocale")
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        selected = payloadItemViewModel.selectedPayload.getValue();
+        Payload selected = payloadItemViewModel.selectedPayload.getValue();
         if (selected != null) {
+            Context ctx = getContext();
             if (selected.received != null) {
-                java.text.DateFormat dateFormat = android.text.format.DateFormat.getDateFormat(getContext());
-                java.text.DateFormat timeFormat = android.text.format.DateFormat.getTimeFormat(getContext());
+                java.text.DateFormat dateFormat = android.text.format.DateFormat.getDateFormat(ctx);
+                java.text.DateFormat timeFormat = android.text.format.DateFormat.getTimeFormat(ctx);
                 textViewPayloadItemReceived.setText(
                         dateFormat.format(selected.received) + " " + timeFormat.format(selected.received));
             }
@@ -72,9 +77,10 @@ public class PayloadDetailFragment extends Fragment {
                 textViewPayloadItemName.setText(selected.devName);
             if (selected.hexPayload != null)
                 textViewPayloadItemPayload.setText(selected.hexPayload);
-            textViewPayloadItemFrequency.setText(String.format("%.1f", selected.frequency / 1000000f) + " MHz");
-            textViewPayloadItemRssi.setText(Integer.toString(selected.rssi) + " dBm");
-            textViewPayloadItemLsnr.setText(Float.toString(selected.lsnr)+ " dB");
+            textViewPayloadItemFrequency.setText(String.format("%.1f", selected.frequency / 1000000f)
+                    + " " + getString(R.string.label_mhz));
+            textViewPayloadItemRssi.setText(selected.rssi + " " + getString(R.string.label_dbm));
+            textViewPayloadItemLsnr.setText(selected.lsnr + " " + getString(R.string.label_db));
         }
     }
 

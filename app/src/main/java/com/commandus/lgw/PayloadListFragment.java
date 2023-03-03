@@ -10,7 +10,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.core.view.MenuHost;
 import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
@@ -34,7 +33,8 @@ public class PayloadListFragment extends Fragment
 
     @Override
     public View onCreateView(
-            LayoutInflater inflater, ViewGroup container,
+            @NonNull LayoutInflater inflater,
+            ViewGroup container,
             Bundle savedInstanceState
     ) {
         binding = FragmentPayloadListBinding.inflate(inflater, container, false);
@@ -54,13 +54,8 @@ public class PayloadListFragment extends Fragment
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         payloadItemViewModel = new ViewModelProvider(requireActivity()).get(PayloadItemViewModel.class);
-        recyclerViewPayloadList.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                NavHostFragment.findNavController(PayloadListFragment.this)
-                        .navigate(R.id.action_PayloadListFragment_to_PayloadItemFragment);
-            }
-        });
+        recyclerViewPayloadList.setOnClickListener(view1 -> NavHostFragment.findNavController(PayloadListFragment.this)
+                .navigate(R.id.action_PayloadListFragment_to_PayloadItemFragment));
         menuHost = requireActivity();
         menuHost.addMenuProvider(this, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
@@ -103,7 +98,8 @@ public class PayloadListFragment extends Fragment
         Intent sendIntent = new Intent();
         sendIntent.setAction(Intent.ACTION_SEND);
         sendIntent.putExtra(Intent.EXTRA_TEXT, PayloadProvider.toJson(getContext()));
-        sendIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.msg_share_payload) + new Date().toString());
+        sendIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.msg_share_payload)
+                + " " + new Date());
         sendIntent.setType("text/plain");
         Intent shareIntent = Intent.createChooser(sendIntent, null);
         startActivity(shareIntent);

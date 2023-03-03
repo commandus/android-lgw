@@ -85,8 +85,6 @@ public class PayloadProvider extends ContentProvider {
         "DROP TABLE IF EXISTS " + TABLE_NAME
     };
 
-    static private HashMap<String, String> PROJECTION_MAP;
-
     public static String toJson(Context context) {
         PayloadProvider.DatabaseHelper dbHelper = new PayloadProvider.DatabaseHelper(context);
         SQLiteDatabase db = dbHelper.getReadableDatabase();
@@ -95,23 +93,21 @@ public class PayloadProvider extends ContentProvider {
         b.append("[");
         boolean isFirst = true;
         if (cursor.moveToFirst()) {
-            while (true) {
+            do {
                 if (isFirst)
                     isFirst = false;
                 else
                     b.append(", ");
                 Payload r = new Payload(
-                    cursor.getString(F_DEVEUI),
-                    cursor.getString(F_DEVNAME),
-                    cursor.getString(F_PAYLOAD),
-                    cursor.getInt(F_FREQUENCY),
-                    cursor.getInt(F_RSSI),
-                    cursor.getFloat(F_LSNR)
+                        cursor.getString(F_DEVEUI),
+                        cursor.getString(F_DEVNAME),
+                        cursor.getString(F_PAYLOAD),
+                        cursor.getInt(F_FREQUENCY),
+                        cursor.getInt(F_RSSI),
+                        cursor.getFloat(F_LSNR)
                 );
                 b.append(r.toJson());
-                if (!cursor.moveToNext())
-                    break;
-            }
+            } while (cursor.moveToNext());
         }
         b.append("]");
         cursor.close();
@@ -177,7 +173,6 @@ public class PayloadProvider extends ContentProvider {
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-        Log.i("LGW", values.toString());
         long rowID = db.insert(TABLE_NAME, "", values);
         if (rowID > 0) {
             Uri r = ContentUris.withAppendedId(CONTENT_URI_PAYLOAD, rowID);
@@ -202,7 +197,6 @@ public class PayloadProvider extends ContentProvider {
         qb.setTables(TABLE_NAME);
         switch (uriMatcher.match(uri)) {
             case M_PAYLOAD_LIST:
-                qb.setProjectionMap(PROJECTION_MAP);
                 break;
             case M_PAYLOAD:
                 qb.appendWhere( FN_ID + " = " + uri.getPathSegments().get(1));

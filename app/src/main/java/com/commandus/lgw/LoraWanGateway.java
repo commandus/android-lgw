@@ -4,18 +4,18 @@ public interface LoraWanGateway {
     /**
      * @return LoRaWAN gateway library version
      */
-    public String getVersion();
+    String getVersion();
 
     /**
      * @return Region settings names
      */
-    public String[] getRegionNames();
+    String[] getRegionNames();
 
     /**
      * Connect to events
-     * @param logger
+     * @param logger set listener
      */
-    public void assignPayloadListener(LGWListener logger);
+    void assignPayloadListener(LGWListener logger);
 
     /**
      * Start LoRaWAN gateway
@@ -24,11 +24,11 @@ public interface LoraWanGateway {
      * @param verbosity 0- none, 7- debug
      * @return 0- success
      */
-    public int startGateway(int regionIndex, String gwId, int verbosity);
+    int startGateway(int regionIndex, String gwId, int verbosity);
 
     /**
      * Stop LoRaWAN gateway
      */
-    public void stopGateway();
+    void stopGateway();
 
 }

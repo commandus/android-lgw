@@ -7,9 +7,6 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
-
-import com.commandus.lgw.R;
-
 public class RegionDialog extends DialogFragment {
     private final String[] mNames;
     private int mSelected;
@@ -22,9 +19,7 @@ public class RegionDialog extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        Context context = getActivity();
-        if (context == null)
-            return null;
+        Context context = getContext();
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         // Set the dialog title
         builder.setTitle(R.string.region_dialog_title)

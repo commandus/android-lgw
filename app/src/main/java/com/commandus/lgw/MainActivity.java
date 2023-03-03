@@ -10,7 +10,6 @@ import android.content.ServiceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.provider.Settings;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -27,6 +26,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.commandus.lgw.databinding.ActivityMainBinding;
 import com.commandus.serial.SerialPort;
+
+import java.util.Date;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity
     implements ServiceConnection, LGWListener, RegionDialog.RegionSelectListener,
@@ -47,7 +49,8 @@ public class MainActivity extends AppCompatActivity
     private TextView textCountValue;
     private RecyclerView recyclerViewLog;
     private Button buttonDevices;
-    private String gwId;
+    private String gwId = "";
+    private MenuItem menuItemGateway;
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
@@ -92,7 +95,7 @@ public class MainActivity extends AppCompatActivity
         com.commandus.lgw.databinding.ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        gwId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        gwId = lgwSettings.getLastGatewayEUI();
 
         buttonRegion = binding.buttonRegion;
         buttonDevices = binding.buttonDevices;
@@ -144,9 +147,13 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
         menuInflater.inflate(R.menu.menu_gateway, menu);
-        MenuItem mi = menu.findItem(R.id.action_gateway);
-        if (mi != null) {
-            mi.setTitle(gwId);
+        menuItemGateway = menu.findItem(R.id.action_gateway);
+        updateUiGatewayId();
+    }
+
+    private void updateUiGatewayId() {
+        if (menuItemGateway != null) {
+            menuItemGateway.setTitle(gwId);
         }
     }
 
@@ -155,8 +162,11 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
         switch (id) {
             case R.id.action_gateway:
+                // It cause Fatal signal 5 (SIGTRAP), code 1 in tid 16364 (RenderThread)
+                /*
                 LgwHelper.copy2clipboard(this, getString(R.string.msg_gateway_identifier),
                         gwId, getString(R.string.msg_gateway_id_copied));
+                 */
                 return true;
             case R.id.action_preferences:
                 Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
@@ -169,6 +179,9 @@ public class MainActivity extends AppCompatActivity
             case R.id.action_help:
                 Intent intent3 = new Intent(MainActivity.this, HelpActivity.class);
                 startActivity(intent3);
+                return true;
+            case R.id.action_send_log_snapshot:
+                shareLog();
                 return true;
         }
         return false;
@@ -195,6 +208,7 @@ public class MainActivity extends AppCompatActivity
             service.stopGateway();
         }
     }
+
     private boolean startLGW() {
         if (service == null)
             return false;
@@ -204,9 +218,8 @@ public class MainActivity extends AppCompatActivity
             pushMessage(getString(R.string.message_no_usb_connection_established));
             return false;
         }
-        return service.startGateway(lgwSettings.getRegionIndex(), lgwSettings.getVerbosity());
+        return service.startGateway(lgwSettings.getRegionIndex(), 0);
     }
-
     @Override
     public void onStart() {
         super.onStart();
@@ -277,7 +290,16 @@ public class MainActivity extends AppCompatActivity
     }
     @Override
     public void onStarted(String gatewayId, String regionName, int regionIndex) {
-        pushMessage(getString(R.string.msg_running) + " " + regionName);
+        // show gateway identifier
+        if (!Objects.equals(gwId, gatewayId)) {
+            gwId = gatewayId;
+            lgwSettings.setLastGatewayEUI(gwId);
+            lgwSettings.save();
+            updateUiGatewayId();
+        }
+
+        pushMessage(getString(R.string.msg_running) + " " + regionName
+            + ". " + getString(R.string.label_gateway) + " " + gatewayId);
         pushMessage(getString(R.string.msg_running_warning));
         reflectGatewayRunning(true);
     }
@@ -357,9 +379,10 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void disconnectUSB() {
-        if (service != null)
+        if (service != null) {
             service.stopGateway();
-        service.isUsbConnected = false;
+            service.isUsbConnected = false;
+        }
         reflectUSBConnected(false);
     }
     private boolean isUSBConnected() {
@@ -433,4 +456,17 @@ public class MainActivity extends AppCompatActivity
         }
         updateUiRegion();
     }
+
+    private void shareLog() {
+        Intent sendIntent = new Intent();
+        sendIntent.setAction(Intent.ACTION_SEND);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, LogHelper.snapshot());
+        sendIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.msg_share_log)
+                + " " + new Date());
+        sendIntent.setType("text/plain");
+        Intent shareIntent = Intent.createChooser(sendIntent, null);
+        startActivity(shareIntent);
+    }
+
 }
+

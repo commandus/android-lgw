@@ -17,17 +17,15 @@
 #include "AndroidIdentityService.h"
 
 // @see https://developer.android.com/training/articles/perf-jni
-
 /*
 static void append2logfile(const char *fmt) {
-    __android_log_print(ANDROID_LOG_DEBUG, "append2logfile", "%s", fmt);
     FILE *f = fopen("/storage/emulated/0/Android/data/com.commandus.lgw/files/Documents/lgw.log", "a+");
     if (f != nullptr) {
         fprintf(f, "%s\r\n", fmt);
         fclose(f);
     }
 }
- */
+*/
 
 /**
  * Java string to std::string
@@ -81,6 +79,13 @@ static jmethodID android_LGW_onIdentitySize = nullptr;
 static jmethodID android_LGW_onIdentityGet = nullptr;
 static jmethodID android_LGW_onIdentityGetNetworkIdentity = nullptr;
 
+static void dbgPrintOutAddresses()
+{
+    __android_log_print(ANDROID_LOG_DEBUG, "algw",
+                        "loggerObject %x loggerCls %x payloadCls %x",
+                        loggerObject, loggerCls, payloadCls);
+}
+
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     jVM = vm;
     return JNI_VERSION_1_6;
@@ -94,11 +99,14 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LorawanGatewayRak2287_s
 {
     if (lgwListener) {
         loggerObject = (jobject) env->NewGlobalRef(lgwListener);
-        loggerCls = env->GetObjectClass(loggerObject);
+
+        jclass lloggerCls = env->GetObjectClass(loggerObject);
+        loggerCls = reinterpret_cast<jclass>(env->NewGlobalRef(lloggerCls));
+
         jclass lpayloadCls = env->FindClass("com/commandus/lgw/Payload");
         payloadCls = reinterpret_cast<jclass>(env->NewGlobalRef(lpayloadCls));
-        android_LGW_onInfo = env->GetMethodID(loggerCls, "onInfo", "(ILjava/lang/String;)V");
 
+        android_LGW_onInfo = env->GetMethodID(loggerCls, "onInfo", "(ILjava/lang/String;)V");
         android_LGW_onConnected = env->GetMethodID(loggerCls, "onUsbConnected", "(Z)V");
         android_LGW_onDisconnected = env->GetMethodID(loggerCls, "onUsbDisconnected", "()V");
         android_LGW_onReceive = env->GetMethodID(loggerCls, "onReceive",
@@ -117,6 +125,9 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LorawanGatewayRak2287_s
         android_LGW_onIdentityGetNetworkIdentity = env->GetMethodID(loggerCls, "onGetNetworkIdentity", "(Ljava/lang/String;)Lcom/commandus/lgw/LoraDeviceAddress;");
 
         payloadCnstr = env->GetMethodID(payloadCls, "<init>", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIF)V");
+
+        // it can help on crash
+        dbgPrintOutAddresses();
     } else {
         if (loggerObject) {
             env->DeleteGlobalRef(loggerObject);
@@ -198,9 +209,8 @@ extern "C" void printf_c1(
     bool requireDetach;
     JNIEnv *jEnv = getJavaEnv(requireDetach);
 
-    if (!jEnv || !loggerObject || !android_LGW_onInfo) {
+    if (!jEnv || !loggerObject || !android_LGW_onInfo)
         return;
-    }
 
     jstring js = jEnv->NewStringUTF(fmt);
     if (!js) {
@@ -225,7 +235,6 @@ public:
         int errorCode,
         const std::string &message
     ) override {
-        __android_log_print(ANDROID_LOG_DEBUG, "android-lgw", "%s", message.c_str());
         printf_c1(message.c_str());
     }
 
@@ -513,22 +522,25 @@ public:
     }
 };
 
+static const char* long_gateway_thread_names[] = {
+        "gwMaim",
+        "upstream",
+        "downstream",
+        "jit",
+        "gps",
+        "gpsCheckTime",
+        "spectralScan"
+};
+
 class JaveThreadStartFinish : public ThreadStartFinish {
 public:
     void onThreadStart(ENUM_GATEWAY_THREAD thread) override
     {
-        JavaLGWEvent javaCb;
-        std::stringstream ss;
-        ss << "Thread started " << thread;
-        __android_log_print(ANDROID_LOG_DEBUG, "android-lgw", "%s", ss.str().c_str());
     }
 
     void onThreadFinish(ENUM_GATEWAY_THREAD thread) override
     {
-        JavaLGWEvent javaCb;
-        std::stringstream ss;
-        ss << "Thread finished " << thread;
-        __android_log_print(ANDROID_LOG_DEBUG, "android-lgw", "%s", ss.str().c_str());
+        // detach Java thread
         jVM->DetachCurrentThread();
     }
 };
@@ -660,25 +672,31 @@ public:
     USBListener *listener;
     // Send packet to the Android
     AndroidLoraPacketHandler *packetHandler;
+    // Java callback
+    JavaLGWEvent javaLGWEvent;
 
-    explicit AndroidGatewayHandler(JavaLGWEvent *javaLGWEvent) {
+    AndroidGatewayHandler() {
         identityService = new AndroidIdentityService();
         libLoragwOpenClose = new AndroidLoragwOpenClose();
         libLoragwHelper.onOpenClose = libLoragwHelper.onOpenClose;
+        libLoragwHelper.bind(&javaLGWEvent, libLoragwOpenClose);
+        identityService->init("", &javaLGWEvent);
+
         listener = new USBListener();
-        listener->setLogger(7, javaLGWEvent);
-        packetHandler = new AndroidLoraPacketHandler(javaLGWEvent);
+        listener->setLogger(7, &javaLGWEvent);
+        packetHandler = new AndroidLoraPacketHandler(&javaLGWEvent);
         listener->setHandler(packetHandler);
         listener->setIdentityService(identityService);
+        listener->listener.stopRequest = false;
 
         listener->listener.setOnStop(
-            [&javaLGWEvent] (const LoraGatewayListener *lsnr,
+            [this] (const LoraGatewayListener *lsnr,
                 bool gracefullyStopped
             ) {
                 if (!gracefullyStopped) {
                     // wait until all threads done
                     while(!lsnr->isStopped()) {
-                        javaLGWEvent->onInfo(nullptr, LOG_INFO, LOG_MAIN_FUNC, 0, "Stopping..");
+                        javaLGWEvent.onInfo(nullptr, LOG_INFO, LOG_MAIN_FUNC, 0, "Stopping..");
                         sleep(1);
                     }
                 }
@@ -715,29 +733,33 @@ static void run(
     int verbosity
 )
 {
-    JavaLGWEvent javaCb;
-    listenerHandler = new AndroidGatewayHandler(&javaCb);
-    listenerHandler->listener->listener.stopRequest = false;
+    listenerHandler = new AndroidGatewayHandler();
 
-    libLoragwHelper.bind(&javaCb, listenerHandler->libLoragwOpenClose);
-    listenerHandler->identityService->init("", &javaCb);
-
-    javaCb.onStarted(gatewayIdentifier,
-        memSetupMemGatewaySettingsStorage[regionIdx].name, regionIdx);
-
+    // check 1
     if (!libLoragwHelper.onOpenClose) {
-        javaCb.onFinished("No open/close");
+        listenerHandler->javaLGWEvent.onFinished("No open/close");
         delete listenerHandler;
         jVM->DetachCurrentThread();
         return;
     }
 
+    // check 2
     if (!listenerHandler->identityService) {
         std::stringstream ss;
         ss << ERR_MESSAGE << ERR_CODE_FAIL_IDENTITY_SERVICE << ": " << ERR_FAIL_IDENTITY_SERVICE
            << memSetupMemGatewaySettingsStorage[regionIdx].name
            << " (settings #" << regionIdx << ")";
-        javaCb.onFinished(ss.str());
+        listenerHandler->javaLGWEvent.onFinished(ss.str());
+        delete listenerHandler;
+        jVM->DetachCurrentThread();
+        return;
+    }
+
+    // check 3
+    if (!listenerHandler->listener || !listenerHandler->listener->onLog) {
+        std::stringstream ss;
+        ss << ERR_MESSAGE << ERR_CODE_INSUFFICIENT_MEMORY << ": " << ERR_INSUFFICIENT_MEMORY << std::endl;
+        listenerHandler->javaLGWEvent.onFinished(ss.str());
         delete listenerHandler;
         jVM->DetachCurrentThread();
         return;
@@ -746,39 +768,24 @@ static void run(
     {
         std::stringstream ss;
         ss << "Devices: " << listenerHandler->identityService->size();
-        javaCb.onInfo(listenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
+        listenerHandler->javaLGWEvent.onInfo(listenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
     }
 
-    GatewayConfigMem gwSettings;
     // set regional settings
+    GatewayConfigMem gwSettings;
     memSetupMemGatewaySettingsStorage[regionIdx].setup(gwSettings.storage);
-
-    if (listenerHandler->listener)
-        listenerHandler->listener->setLogger(verbosity, &javaCb);
-    if (!listenerHandler->listener || !listenerHandler->listener->onLog) {
-        std::stringstream ss;
-        ss << ERR_MESSAGE << ERR_CODE_INSUFFICIENT_MEMORY << ": " << ERR_INSUFFICIENT_MEMORY << std::endl;
-        javaCb.onFinished(ss.str());
-        delete listenerHandler;
-        jVM->DetachCurrentThread();
-        return;
-    }
-
-    std::stringstream ss;
-    ss << "Listening, region "
-       << memSetupMemGatewaySettingsStorage[regionIdx].name << std::endl;
-
-    javaCb.onInfo(listenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
 
     // read only, deny send message and deny send beacon
     int flags = FLAG_GATEWAY_LISTENER_NO_SEND | FLAG_GATEWAY_LISTENER_NO_BEACON;
-    int r = listenerHandler->listener->listen(&gwSettings, flags, &javeThreadStartFinish);
+    int r = listenerHandler->listener->listen(
+            memSetupMemGatewaySettingsStorage[regionIdx].name, regionIdx, &gwSettings, flags,
+            &javeThreadStartFinish);
     if (r) {
         std::stringstream ss2;
         ss2 << ERR_MESSAGE << r << ": " << strerror_lorawan_ns(r) << std::endl;
-        javaCb.onInfo(nullptr, LOG_ERR, LOG_MAIN_FUNC, r, ss2.str());
+        listenerHandler->javaLGWEvent.onInfo(nullptr, LOG_ERR, LOG_MAIN_FUNC, r, ss2.str());
     } else
-        javaCb.onFinished("Successfully finished");
+        listenerHandler->javaLGWEvent.onFinished("Successfully finished");
     delete listenerHandler;
     listenerHandler = nullptr;
     jVM->DetachCurrentThread();
@@ -808,12 +815,13 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LorawanGatewayRak2287_s
 {
     if (!listenerHandler)
         return;
+    if (!listenerHandler->listener)
+        return;
     int r = listenerHandler->listener->listener.stop(0);
     if (r) {
-        JavaLGWEvent javaCb;
         std::stringstream ss3;
         ss3 << "Stop error " << r;
-        javaCb.onInfo(nullptr, LOG_ERR, LOG_MAIN_FUNC, r, ss3.str());
+        listenerHandler->javaLGWEvent.onInfo(nullptr, LOG_ERR, LOG_MAIN_FUNC, r, ss3.str());
     }
 }
 
@@ -964,51 +972,52 @@ static void runFake(
     size_t regionIdx,
     int verbosity
 ) {
-    JavaLGWEvent javaCb;
-    auto *fakeListenerHandler = new AndroidGatewayHandler(&javaCb);
+    listenerHandler = new AndroidGatewayHandler();
 
-    fakeListenerHandler->listener->listener.stopRequest = false;
+    listenerHandler->listener->listener.stopRequest = false;
 
-    libLoragwHelper.bind(&javaCb, fakeListenerHandler->libLoragwOpenClose);
-    fakeListenerHandler->identityService->init("", &javaCb);
+    libLoragwHelper.bind(&listenerHandler->javaLGWEvent, listenerHandler->libLoragwOpenClose);
+    listenerHandler->identityService->init("", &listenerHandler->javaLGWEvent);
 
-    javaCb.onStarted(gatewayIdentifier,
+    listenerHandler->javaLGWEvent.onStarted(gatewayIdentifier,
                      memSetupMemGatewaySettingsStorage[regionIdx].name, regionIdx);
 
     if (!libLoragwHelper.onOpenClose) {
-        javaCb.onFinished("No open/close");
-        delete fakeListenerHandler;
+        listenerHandler->javaLGWEvent.onFinished("No open/close");
+        delete listenerHandler;
+        listenerHandler = nullptr;
         jVM->DetachCurrentThread();
         return;
     }
 
-    if (!fakeListenerHandler->identityService) {
+    if (!listenerHandler->identityService) {
         std::stringstream ss;
         ss << ERR_MESSAGE << ERR_CODE_FAIL_IDENTITY_SERVICE << ": " << ERR_FAIL_IDENTITY_SERVICE
            << memSetupMemGatewaySettingsStorage[regionIdx].name
            << " (settings #" << regionIdx << ")";
-        javaCb.onFinished(ss.str());
+        listenerHandler->javaLGWEvent.onFinished(ss.str());
+        delete listenerHandler;
+        listenerHandler = nullptr;
         jVM->DetachCurrentThread();
         return;
     }
 
     {
         std::stringstream ss;
-        ss << "Devices: " << fakeListenerHandler->identityService->size();
-        javaCb.onInfo(fakeListenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
+        ss << "Devices: " << listenerHandler->identityService->size();
+        listenerHandler->javaLGWEvent.onInfo(listenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
     }
 
     GatewayConfigMem gwSettings;
     // set regional settings
     memSetupMemGatewaySettingsStorage[regionIdx].setup(gwSettings.storage);
 
-    if (fakeListenerHandler->listener)
-        fakeListenerHandler->listener->setLogger(verbosity, &javaCb);
-    if (!fakeListenerHandler->listener || !fakeListenerHandler->listener->onLog) {
+    if (!listenerHandler->listener || !listenerHandler->listener->onLog) {
         std::stringstream ss;
         ss << ERR_MESSAGE << ERR_CODE_INSUFFICIENT_MEMORY << ": " << ERR_INSUFFICIENT_MEMORY << std::endl;
-        javaCb.onFinished(ss.str());
-        delete fakeListenerHandler;
+        listenerHandler->javaLGWEvent.onFinished(ss.str());
+        delete listenerHandler;
+        listenerHandler = nullptr;
         jVM->DetachCurrentThread();
         return;
     }
@@ -1017,12 +1026,12 @@ static void runFake(
     ss << "Listening, region "
        << memSetupMemGatewaySettingsStorage[regionIdx].name << std::endl;
 
-    javaCb.onInfo(fakeListenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
+    listenerHandler->javaLGWEvent.onInfo(listenerHandler->listener, LOG_INFO, LOG_MAIN_FUNC, 0, ss.str());
 
     int r = 0;
 
     size_t cnt = 0;
-    while (!fakeListenerHandler->listener->listener.stopRequest) {
+    while (!listenerHandler->listener->listener.stopRequest) {
         if ((cnt % 60) == 0) {
             Payload p;
             p.received = time(nullptr);
@@ -1033,7 +1042,7 @@ static void runFake(
             p.rssi = 1;
             p.lsnr = 2;
             p.payload = "fake";
-            javaCb.onValue(p);
+            listenerHandler->javaLGWEvent.onValue(p);
         }
         sleep(1);
         cnt++;
@@ -1041,10 +1050,12 @@ static void runFake(
     if (r) {
         std::stringstream ss4;
         ss4 << ERR_MESSAGE << r << ": " << strerror_lorawan_ns(r) << std::endl;
-        javaCb.onInfo(fakeListenerHandler->listener, LOG_ERR, LOG_MAIN_FUNC, r, ss4.str());
+        listenerHandler->javaLGWEvent.onInfo(listenerHandler->listener, LOG_ERR,
+        LOG_MAIN_FUNC, r, ss4.str());
     } else
-        javaCb.onFinished("Successfully finished");
-    delete fakeListenerHandler;
+        listenerHandler->javaLGWEvent.onFinished("Successfully finished");
+    delete listenerHandler;
+    listenerHandler = nullptr;
     jVM->DetachCurrentThread();
 }
 
@@ -1068,6 +1079,6 @@ extern "C" JNIEXPORT void JNICALL Java_com_commandus_lgw_LorawanGatewayFake_stop
     jobject /* this */
 )
 {
-    if (listenerHandler)
+    if (listenerHandler && listenerHandler->listener)
         listenerHandler->listener->listener.stopRequest = true;
 }

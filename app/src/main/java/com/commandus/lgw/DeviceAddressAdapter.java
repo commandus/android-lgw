@@ -11,7 +11,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdapter.ViewHolder> {
 
-    private final RecyclerView recyclerView;
     private final Cursor mCursor;
     protected final ItemSelection mSelection;
 
@@ -38,7 +37,7 @@ public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdap
                 adapter.mSelection.onSelect(id);
         }
 
-        public void set(int position, long id, String name) {
+        public void set(long id, String name) {
             this.id = id;
             textView.setText(name);
         }
@@ -47,9 +46,8 @@ public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdap
     // Create new views (invoked by the layout manager)
 
     public DeviceAddressAdapter(RecyclerView rv, ItemSelection addressSelection) {
-        recyclerView = rv;
         mSelection = addressSelection;
-        mCursor = recyclerView.getContext().getContentResolver().query(
+        mCursor = rv.getContext().getContentResolver().query(
             DeviceAddressProvider.CONTENT_URI_ABP, DeviceAddressProvider.PROJECTION, null, null, null);
     }
 
@@ -58,9 +56,6 @@ public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdap
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
         View view = LayoutInflater.from(viewGroup.getContext())
                 .inflate(R.layout.address_list_item, viewGroup, false);
-        if (mSelection != null) {
-            final RecyclerView.ViewHolder holder = new DeviceAddressAdapter.ViewHolder(view);
-        }
         return new ViewHolder(view);
     }
 
@@ -70,7 +65,7 @@ public class DeviceAddressAdapter extends RecyclerView.Adapter<DeviceAddressAdap
         // Get element from your dataset at this position and replace the
         // contents of the view with that element
         mCursor.moveToPosition(position);
-        viewHolder.set(position, mCursor.getLong(DeviceAddressProvider.F_ID), mCursor.getString(DeviceAddressProvider.F_NAME));
+        viewHolder.set(mCursor.getLong(DeviceAddressProvider.F_ID), mCursor.getString(DeviceAddressProvider.F_NAME));
     }
 
     // Return the size of your dataset (invoked by the layout manager)

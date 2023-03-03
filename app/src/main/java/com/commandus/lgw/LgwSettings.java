@@ -18,18 +18,20 @@ public class LgwSettings {
     private static final String PREF_LOAD_LAST_URI = "load_last_uri";
     private static final String PREF_SHARE_LAST_URI = "share_last_uri";
     private static final String PREF_AUTO_START = "auto_start";
+    private static final String PREF_LAST_GATEWAY_EUI = "last_gateway_eui";
+
     private static final String DEF_CONTENT_PROVIDER_URI = "content://lora.data/payload";
     private static LgwSettings mLgwSettings = null;
     private final Context mContext;
     private String mTheme; // light|dark
     private int mRegionIndex;
-    private int mVerbosity = 7;
     private String mLoadLastUri;
     private String mShareLastUri;
     private String mContentProviderUri;
     private boolean mKeepScreenOn;
     private boolean mStartAtBoot;
     private boolean mAutoStart;
+    private String mLastGatewayEUI;
 
     public String getTheme() {
         return mTheme;
@@ -46,9 +48,11 @@ public class LgwSettings {
     public String getContentProviderUri() {
         return mContentProviderUri;
     }
-
-    public boolean isFakeDevice() {
-        return true;
+    public String getLastGatewayEUI() {
+        return mLastGatewayEUI;
+    }
+    public void setLastGatewayEUI(String value) {
+        mLastGatewayEUI = value;
     }
 
     /**
@@ -64,6 +68,7 @@ public class LgwSettings {
         mRegionIndex = prefs.getInt(PREF_REGION_INDEX, 0);
         mLoadLastUri = prefs.getString(PREF_LOAD_LAST_URI, "");
         mShareLastUri = prefs.getString(PREF_LOAD_LAST_URI, "");
+        mLastGatewayEUI = prefs.getString(PREF_LAST_GATEWAY_EUI, "");
         if (invalidate())
             save();
     }
@@ -90,6 +95,8 @@ public class LgwSettings {
         editor.putInt(PREF_REGION_INDEX, mRegionIndex);
         editor.putString(PREF_LOAD_LAST_URI, mLoadLastUri);
         editor.putString(PREF_SHARE_LAST_URI, mShareLastUri);
+        editor.putString(PREF_LAST_GATEWAY_EUI, mLastGatewayEUI);
+
         editor.apply();
     }
 
@@ -116,8 +123,8 @@ public class LgwSettings {
 
     /**
      * Singleton
-     * @param context
-     * @return
+     * @param context application context
+     * @return settings
      */
     public synchronized static LgwSettings getSettings(Context context) {
         if (mLgwSettings == null) {
@@ -131,12 +138,6 @@ public class LgwSettings {
     public void setRegionIndex(int value) {
         mRegionIndex = value;
     }
-    public boolean isFileLog() {
-        return true;
-    }
-    public int getVerbosity() {
-        return mVerbosity;
-    }
     public String getLoadLastUri() {
         return mLoadLastUri;
     }
@@ -149,4 +150,5 @@ public class LgwSettings {
     public void setSaveLastUri(String value) {
         mShareLastUri = value;
     }
+
 }

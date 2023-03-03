@@ -24,7 +24,6 @@ public class AddressItemFragment extends Fragment
 
     private FragmentAddressItemBinding binding;
 
-    private AddressItemViewModel addressItemViewModel;
     private LoraDeviceAddress selected;
     private EditText editTextAddress;
     private EditText editTextEUI;
@@ -35,7 +34,8 @@ public class AddressItemFragment extends Fragment
 
     @Override
     public View onCreateView(
-            LayoutInflater inflater, ViewGroup container,
+            @NonNull LayoutInflater inflater,
+            ViewGroup container,
             Bundle savedInstanceState
     ) {
         binding = FragmentAddressItemBinding.inflate(inflater, container, false);
@@ -49,12 +49,12 @@ public class AddressItemFragment extends Fragment
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        addressItemViewModel = new ViewModelProvider(requireActivity()).get(AddressItemViewModel.class);
+        AddressItemViewModel addressItemViewModel = new ViewModelProvider(requireActivity()).get(AddressItemViewModel.class);
 
         selected = addressItemViewModel.selectedAddress.getValue();
         if (selected != null) {
             if (selected.addr != null)
-                editTextAddress.setText(selected.addr.toString());
+                editTextAddress.setText(selected.addr);
             if (selected.devEui != null)
                 editTextEUI.setText(selected.devEui.toString());
             if (selected.nwkSKey != null)
@@ -67,22 +67,6 @@ public class AddressItemFragment extends Fragment
 
         MenuHost menuHost = requireActivity();
         menuHost.addMenuProvider(this, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
-    }
-
-    private void save() {
-        if (selected != null)
-            DeviceAddressProvider.update(getContext(), selected);
-        else
-            DeviceAddressProvider.add(getContext(), new LoraDeviceAddress(
-                0L,
-                editTextAddress.getText().toString(),
-                editTextEUI.getText().toString(),
-                editTextNwkSKey.getText().toString(),
-                editTextAppSKey.getText().toString(),
-                editTextName.getText().toString()
-            ));
-        NavHostFragment.findNavController(AddressItemFragment.this)
-                .navigate(R.id.action_DeviceItemFragment_to_DeviceListFragment);
     }
 
     @Override
@@ -106,15 +90,23 @@ public class AddressItemFragment extends Fragment
         int id = item.getItemId();
         switch (id) {
             case R.id.action_save_device:
-
-                selected.addr = editTextAddress.getText().toString();
-                selected.devEui = new DevEUI(editTextEUI.getText().toString());
-                selected.nwkSKey = new KEY128(editTextNwkSKey.getText().toString());
-                selected.appSKey = new KEY128(editTextAppSKey.getText().toString());
-                selected.name = editTextName.getText().toString();
-
-                DeviceAddressProvider.update(getContext(), selected);
-
+                if (selected == null) {
+                    DeviceAddressProvider.add(getContext(), new LoraDeviceAddress(
+                        0L,
+                        editTextAddress.getText().toString(),
+                        editTextEUI.getText().toString(),
+                        editTextNwkSKey.getText().toString(),
+                        editTextAppSKey.getText().toString(),
+                        editTextName.getText().toString()
+                    ));
+                } else {
+                    selected.addr = editTextAddress.getText().toString();
+                    selected.devEui = new DevEUI(editTextEUI.getText().toString());
+                    selected.nwkSKey = new KEY128(editTextNwkSKey.getText().toString());
+                    selected.appSKey = new KEY128(editTextAppSKey.getText().toString());
+                    selected.name = editTextName.getText().toString();
+                    DeviceAddressProvider.update(getContext(), selected);
+                }
                 back();
                 return true;
             case R.id.action_delete_device:
